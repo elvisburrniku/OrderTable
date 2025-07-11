@@ -52,6 +52,31 @@ import {
   Search,
   Check,
   ChevronsUpDown,
+  Building,
+  Phone,
+  MapPin,
+  Hash,
+  FileText,
+  Timer,
+  CalendarDays,
+  Languages,
+  Coins,
+  Clock3,
+  PieChart,
+  Tag,
+  UserCheck,
+  CreditCard as CardIcon,
+  Truck,
+  ChefHat,
+  ShoppingCart,
+  Star,
+  Volume2,
+  Instagram,
+  Facebook,
+  Twitter,
+  Hashtag,
+  AtSign,
+  Info,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -261,18 +286,22 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto p-6 space-y-8">
+      <div className=" mx-auto p-6 space-y-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <SettingsIcon className="h-8 w-8" />
-            Restaurant Settings
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Configure your restaurant's operational preferences and system
-            behavior
-          </p>
-        </div>
+        <Card>
+          <CardHeader>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <SettingsIcon className="h-8 w-8" />
+                Restaurant Settings
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Configure your restaurant's operational preferences and system
+                behavior
+              </p>
+            </div>
+          </CardHeader>
+        </Card>
 
         {/* General Settings */}
         <Card>
@@ -289,7 +318,8 @@ export default function Settings() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="timeZone" className="text-sm font-medium">
+                <Label htmlFor="timeZone" className="text-sm font-medium flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
                   Time Zone
                 </Label>
                 <Popover open={timezoneOpen} onOpenChange={setTimezoneOpen}>
@@ -363,7 +393,8 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateFormat" className="text-sm font-medium">
+                <Label htmlFor="dateFormat" className="text-sm font-medium flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4" />
                   Date Format
                 </Label>
                 <Select
@@ -396,7 +427,8 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="timeFormat" className="text-sm font-medium">
+                <Label htmlFor="timeFormat" className="text-sm font-medium flex items-center gap-2">
+                  <Clock3 className="w-4 h-4" />
                   Time Format
                 </Label>
                 <Select
@@ -421,7 +453,8 @@ export default function Settings() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="currency" className="text-sm font-medium">
+                <Label htmlFor="currency" className="text-sm font-medium flex items-center gap-2">
+                  <Coins className="w-4 h-4" />
                   Currency
                 </Label>
                 <Select
@@ -477,7 +510,8 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language" className="text-sm font-medium">
+                <Label htmlFor="language" className="text-sm font-medium flex items-center gap-2">
+                  <Languages className="w-4 h-4" />
                   Language
                 </Label>
                 <Select
@@ -581,7 +615,10 @@ export default function Settings() {
               <h4 className="text-lg font-medium mb-4">Bookings</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="duration">Duration:</Label>
+                  <Label htmlFor="duration" className="flex items-center gap-2">
+                    <Timer className="w-4 h-4" />
+                    Duration:
+                  </Label>
                   <Select
                     value={`${bookingSettings.defaultDuration} minutes`}
                     onValueChange={(value) => {
@@ -607,7 +644,10 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <Label htmlFor="emptySeats">Empty seats:</Label>
+                  <Label htmlFor="emptySeats" className="flex items-center gap-2">
+                    <ChefHat className="w-4 h-4" />
+                    Empty seats:
+                  </Label>
                   <Select
                     value={bookingSettings.emptySeats.toString()}
                     onValueChange={(value) =>
@@ -631,7 +671,10 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <Label htmlFor="turnaroundTime">Turnaround time:</Label>
+                  <Label htmlFor="turnaroundTime" className="flex items-center gap-2">
+                    <Clock3 className="w-4 h-4" />
+                    Turnaround time:
+                  </Label>
                   <Select
                     value={`${bookingSettings.turnaroundTime} min.`}
                     onValueChange={(value) => {
@@ -656,7 +699,10 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <Label htmlFor="contactMethod">Contact method:</Label>
+                  <Label htmlFor="contactMethod" className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Contact method:
+                  </Label>
                   <Select
                     value={bookingSettings.contactMethod}
                     onValueChange={(value) =>
@@ -689,12 +735,18 @@ export default function Settings() {
                       })
                     }
                   />
-                  <Label>Use ending time:</Label>
+                  <Label className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Use ending time:
+                  </Label>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label>Allow cancellation and changes:</Label>
+                    <Label className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Allow cancellation and changes:
+                    </Label>
                     <Select
                       value={
                         bookingSettings.allowCancellationAndChanges
@@ -719,7 +771,10 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <Label>Cancellation notice:</Label>
+                    <Label className="flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      Cancellation notice:
+                    </Label>
                     <Select
                       value={bookingSettings.cancellationNotice}
                       onValueChange={(value) =>
@@ -753,11 +808,17 @@ export default function Settings() {
                       })
                     }
                   />
-                  <Label>Group Request</Label>
+                  <Label className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Group Request
+                  </Label>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Enable waiting list:</Label>
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Enable waiting list:
+                  </Label>
                   <div className="flex flex-wrap gap-4">
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -1168,7 +1229,10 @@ export default function Settings() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <Label>Max. bookings per arrival time:</Label>
+                    <Label className="flex items-center gap-2">
+                      <Hash className="w-4 h-4" />
+                      Max. bookings per arrival time:
+                    </Label>
                     <Select
                       value={bookingSettings.onlineBooking.maxBookingsPerTime}
                       onValueChange={(value) =>
@@ -1196,7 +1260,10 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <Label>Max. guests per arrival time:</Label>
+                    <Label className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Max. guests per arrival time:
+                    </Label>
                     <Select
                       value={bookingSettings.onlineBooking.maxGuestsPerTime}
                       onValueChange={(value) =>
@@ -1224,7 +1291,10 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <Label>Max. capacity (concurrent guests):</Label>
+                    <Label className="flex items-center gap-2">
+                      <PieChart className="w-4 h-4" />
+                      Max. capacity (concurrent guests):
+                    </Label>
                     <Select
                       value={bookingSettings.onlineBooking.maxCapacity}
                       onValueChange={(value) =>
@@ -1265,7 +1335,10 @@ export default function Settings() {
                         })
                       }
                     />
-                    <Label>Collect e-mail:</Label>
+                    <Label className="flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      Collect e-mail:
+                    </Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -1281,11 +1354,17 @@ export default function Settings() {
                         })
                       }
                     />
-                    <Label>E-mail required:</Label>
+                    <Label className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      E-mail required:
+                    </Label>
                   </div>
 
                   <div>
-                    <Label>Collect address:</Label>
+                    <Label className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Collect address:
+                    </Label>
                     <div className="flex gap-4 mt-2">
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -1339,7 +1418,10 @@ export default function Settings() {
                         })
                       }
                     />
-                    <Label>Confirm newsletter:</Label>
+                    <Label className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" />
+                      Confirm newsletter:
+                    </Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -1355,15 +1437,21 @@ export default function Settings() {
                         })
                       }
                     />
-                    <Label>Confirm duration:</Label>
+                    <Label className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Confirm duration:
+                    </Label>
                   </div>
 
                   <div>
-                    <Label htmlFor="confirmUrl">Confirm URL:</Label>
+                    <Label htmlFor="confirmUrl" className="flex items-center gap-2">
+                      <Globe className="w-4 h-4" />
+                      Confirm URL:
+                    </Label>
                     <Input
                       id="confirmUrl"
                       type="url"
-                      placeholder="https://yourrestaurant.com/booking-confirmed"
+                      placeholder="Test URL placeholder - enter your booking confirmation page"
                       value={bookingSettings.onlineBooking.confirmUrl}
                       onChange={(e) =>
                         setBookingSettings({
@@ -1378,13 +1466,14 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <Label htmlFor="privacyPolicyUrl">
+                    <Label htmlFor="privacyPolicyUrl" className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
                       Privacy Policy URL:
                     </Label>
                     <Input
                       id="privacyPolicyUrl"
                       type="url"
-                      placeholder="https://yourrestaurant.com/privacy-policy"
+                      placeholder="Test privacy policy URL - enter your privacy policy page"
                       value={bookingSettings.onlineBooking.privacyPolicyUrl}
                       onChange={(e) =>
                         setBookingSettings({
@@ -1422,11 +1511,17 @@ export default function Settings() {
                       })
                     }
                   />
-                  <Label>Table suggestions:</Label>
+                  <Label className="flex items-center gap-2">
+                    <Utensils className="w-4 h-4" />
+                    Table suggestions:
+                  </Label>
                 </div>
 
                 <div>
-                  <Label>Interval:</Label>
+                  <Label className="flex items-center gap-2">
+                    <Timer className="w-4 h-4" />
+                    Interval:
+                  </Label>
                   <Select
                     value={`${bookingSettings.manualBooking.interval} min.`}
                     onValueChange={(value) =>
@@ -1464,7 +1559,10 @@ export default function Settings() {
                       })
                     }
                   />
-                  <Label>Initials are mandatory:</Label>
+                  <Label className="flex items-center gap-2">
+                    <Tag className="w-4 h-4" />
+                    Initials are mandatory:
+                  </Label>
                 </div>
               </div>
             </div>
@@ -1489,7 +1587,10 @@ export default function Settings() {
                     })
                   }
                 />
-                <Label>New booking notification:</Label>
+                <Label className="flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  New booking notification:
+                </Label>
               </div>
             </div>
           </CardContent>
@@ -1510,10 +1611,13 @@ export default function Settings() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="fromName">Sender Name</Label>
+                <Label htmlFor="fromName" className="flex items-center gap-2">
+                  <Building className="w-4 h-4" />
+                  Sender Name
+                </Label>
                 <Input
                   id="fromName"
-                  placeholder="Your Restaurant Name"
+                  placeholder="Test restaurant name - enter your business name for email signatures"
                   value={emailSettings.fromName}
                   onChange={(e) =>
                     setEmailSettings({
@@ -1522,16 +1626,22 @@ export default function Settings() {
                     })
                   }
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Name that appears in customer emails
-                </p>
+                <div className="flex items-center gap-1 mt-1">
+                  <Info className="w-3 h-3 text-gray-400" />
+                  <p className="text-sm text-gray-500">
+                    Name that appears in customer emails
+                  </p>
+                </div>
               </div>
               <div>
-                <Label htmlFor="fromEmail">Sender Email</Label>
+                <Label htmlFor="fromEmail" className="flex items-center gap-2">
+                  <AtSign className="w-4 h-4" />
+                  Sender Email
+                </Label>
                 <Input
                   id="fromEmail"
                   type="email"
-                  placeholder="noreply@yourrestaurant.com"
+                  placeholder="Test email - enter your business email for outgoing messages"
                   value={emailSettings.fromEmail}
                   onChange={(e) =>
                     setEmailSettings({
@@ -1540,9 +1650,12 @@ export default function Settings() {
                     })
                   }
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Email address for outgoing messages
-                </p>
+                <div className="flex items-center gap-1 mt-1">
+                  <Info className="w-3 h-3 text-gray-400" />
+                  <p className="text-sm text-gray-500">
+                    Email address for outgoing messages
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1555,7 +1668,10 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Booking Confirmation Emails</Label>
+                      <Label className="flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        Booking Confirmation Emails
+                      </Label>
                       <p className="text-sm text-gray-500">
                         Send confirmation when booking is made
                       </p>
@@ -1573,7 +1689,10 @@ export default function Settings() {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Booking Reminder Emails</Label>
+                      <Label className="flex items-center gap-2">
+                        <Bell className="w-4 h-4" />
+                        Booking Reminder Emails
+                      </Label>
                       <p className="text-sm text-gray-500">
                         Send reminder before booking
                       </p>
@@ -1591,7 +1710,10 @@ export default function Settings() {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Cancellation Notice Emails</Label>
+                      <Label className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        Cancellation Notice Emails
+                      </Label>
                       <p className="text-sm text-gray-500">
                         Notify when bookings are cancelled
                       </p>
@@ -1611,7 +1733,8 @@ export default function Settings() {
                 <div className="space-y-4">
                   {emailSettings.enableBookingReminders && (
                     <div>
-                      <Label htmlFor="reminderHours">
+                      <Label htmlFor="reminderHours" className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
                         Reminder Time Before Booking
                       </Label>
                       <Select
@@ -1627,13 +1750,13 @@ export default function Settings() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">1 hour before</SelectItem>
-                          <SelectItem value="2">2 hours before</SelectItem>
-                          <SelectItem value="4">4 hours before</SelectItem>
-                          <SelectItem value="6">6 hours before</SelectItem>
-                          <SelectItem value="12">12 hours before</SelectItem>
-                          <SelectItem value="24">24 hours before</SelectItem>
-                          <SelectItem value="48">48 hours before</SelectItem>
+                          <SelectItem value="1">Test option - 1 hour before</SelectItem>
+                          <SelectItem value="2">Test option - 2 hours before</SelectItem>
+                          <SelectItem value="4">Test option - 4 hours before</SelectItem>
+                          <SelectItem value="6">Test option - 6 hours before</SelectItem>
+                          <SelectItem value="12">Test option - 12 hours before</SelectItem>
+                          <SelectItem value="24">Test option - 24 hours before</SelectItem>
+                          <SelectItem value="48">Test option - 48 hours before</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
