@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building, Users, Settings, Plus, Trash2, UserPlus } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Building, Users, Settings, Plus, Trash2, UserPlus, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TenantSettings() {
@@ -108,61 +109,92 @@ export default function TenantSettings() {
   const currentTenantUsers = tenantData.users || [];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tenant Settings</h1>
-          <p className="text-gray-600">Manage your organization settings and team members.</p>
-        </div>
-      </div>
-
-      {/* Tenant Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Building className="h-5 w-5" />
-            <span>Organization Information</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Organization Name</Label>
-              <Input
-                id="name"
-                value={currentTenant.name || ""}
-                disabled={!canManageTenant}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="subdomain">Subdomain</Label>
-              <Input
-                id="subdomain"
-                value={currentTenant.slug || ""}
-                disabled={!canManageTenant}
-                className="mt-1"
-                placeholder="your-company"
-              />
-            </div>
-          </div>
+    <TooltipProvider>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
           <div>
-            <Label htmlFor="customDomain">Custom Domain</Label>
-            <Input
-              id="customDomain"
-              value={currentTenant.customDomain || ""}
-              disabled={!canManageTenant}
-              className="mt-1"
-              placeholder="booking.yourcompany.com"
-            />
+            <h1 className="text-2xl font-bold text-gray-900">Tenant Settings</h1>
+            <p className="text-gray-600">Manage your organization settings and team members.</p>
           </div>
-          {canManageTenant && (
-            <Button onClick={() => updateTenantMutation.mutate({})}>
-              Save Changes
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Tenant Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Building className="h-5 w-5" />
+              <span>Organization Information</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name" className="flex items-center space-x-2">
+                  <span>Organization Name</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>The display name for your organization that will be shown to customers</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
+                <Input
+                  id="name"
+                  value={currentTenant.name || ""}
+                  disabled={!canManageTenant}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="subdomain" className="flex items-center space-x-2">
+                  <span>Subdomain</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Your unique subdomain for accessing the booking system (e.g., your-company.readytable.com)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
+                <Input
+                  id="subdomain"
+                  value={currentTenant.slug || ""}
+                  disabled={!canManageTenant}
+                  className="mt-1"
+                  placeholder="your-company"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="customDomain" className="flex items-center space-x-2">
+                <span>Custom Domain</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Use your own domain for the booking system (e.g., booking.yourcompany.com)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </Label>
+              <Input
+                id="customDomain"
+                value={currentTenant.customDomain || ""}
+                disabled={!canManageTenant}
+                className="mt-1"
+                placeholder="booking.yourcompany.com"
+              />
+            </div>
+            {canManageTenant && (
+              <Button onClick={() => updateTenantMutation.mutate({})}>
+                Save Changes
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
       {/* Team Members */}
       <Card>
@@ -186,7 +218,17 @@ export default function TenantSettings() {
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="inviteEmail">Email</Label>
+                      <Label htmlFor="inviteEmail" className="flex items-center space-x-2">
+                        <span>Email</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Enter the email address of the person you want to invite to your organization</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
                       <Input
                         id="inviteEmail"
                         type="email"
@@ -195,7 +237,17 @@ export default function TenantSettings() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="inviteRole">Role</Label>
+                      <Label htmlFor="inviteRole" className="flex items-center space-x-2">
+                        <span>Role</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Choose the role: Admin (full access), Member (standard access), or Viewer (read-only)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
                       <Select
                         value={inviteForm.role}
                         onValueChange={(value) => setInviteForm(prev => ({ ...prev, role: value }))}
@@ -268,6 +320,7 @@ export default function TenantSettings() {
           </Table>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
