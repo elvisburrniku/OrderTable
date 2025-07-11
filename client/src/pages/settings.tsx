@@ -34,6 +34,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Settings as SettingsIcon,
   Clock,
   Bell,
@@ -285,8 +291,9 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className=" mx-auto p-6 space-y-8">
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className=" mx-auto p-6 space-y-8">
         {/* Page Header */}
         <Card>
           <CardHeader>
@@ -321,6 +328,14 @@ export default function Settings() {
                 <Label htmlFor="timeZone" className="text-sm font-medium flex items-center gap-2">
                   <Globe className="w-4 h-4" />
                   Time Zone
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Choose your restaurant's local timezone for accurate booking times</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <Popover open={timezoneOpen} onOpenChange={setTimezoneOpen}>
                   <PopoverTrigger asChild>
@@ -396,6 +411,14 @@ export default function Settings() {
                 <Label htmlFor="dateFormat" className="text-sm font-medium flex items-center gap-2">
                   <CalendarDays className="w-4 h-4" />
                   Date Format
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>How dates will be displayed throughout the system</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <Select
                   value={generalSettings.dateFormat}
@@ -411,16 +434,16 @@ export default function Settings() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="MM/dd/yyyy">
-                      MM/DD/YYYY (12/25/2024)
+                      Test format - MM/DD/YYYY (12/25/2024)
                     </SelectItem>
                     <SelectItem value="dd/MM/yyyy">
-                      DD/MM/YYYY (25/12/2024)
+                      Test format - DD/MM/YYYY (25/12/2024)
                     </SelectItem>
                     <SelectItem value="yyyy-MM-dd">
-                      YYYY-MM-DD (2024-12-25)
+                      Test format - YYYY-MM-DD (2024-12-25)
                     </SelectItem>
                     <SelectItem value="MMM dd, yyyy">
-                      MMM DD, YYYY (Dec 25, 2024)
+                      Test format - MMM DD, YYYY (Dec 25, 2024)
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -430,6 +453,14 @@ export default function Settings() {
                 <Label htmlFor="timeFormat" className="text-sm font-medium flex items-center gap-2">
                   <Clock3 className="w-4 h-4" />
                   Time Format
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Choose between 12-hour (AM/PM) or 24-hour time display</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <Select
                   value={generalSettings.timeFormat}
@@ -444,8 +475,8 @@ export default function Settings() {
                     <SelectValue placeholder="Select time format" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="12h">12 Hour (2:30 PM)</SelectItem>
-                    <SelectItem value="24h">24 Hour (14:30)</SelectItem>
+                    <SelectItem value="12h">Test format - 12 Hour (2:30 PM)</SelectItem>
+                    <SelectItem value="24h">Test format - 24 Hour (14:30)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -456,6 +487,14 @@ export default function Settings() {
                 <Label htmlFor="currency" className="text-sm font-medium flex items-center gap-2">
                   <Coins className="w-4 h-4" />
                   Currency
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Default currency for pricing and financial displays</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <Select
                   value={generalSettings.currency}
@@ -467,9 +506,9 @@ export default function Settings() {
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USD">USD ($) - US Dollar</SelectItem>
-                    <SelectItem value="EUR">EUR (€) - Euro</SelectItem>
-                    <SelectItem value="GBP">GBP (£) - British Pound</SelectItem>
+                    <SelectItem value="USD">Test currency - USD ($) - US Dollar</SelectItem>
+                    <SelectItem value="EUR">Test currency - EUR (€) - Euro</SelectItem>
+                    <SelectItem value="GBP">Test currency - GBP (£) - British Pound</SelectItem>
                     <SelectItem value="CAD">
                       CAD (C$) - Canadian Dollar
                     </SelectItem>
@@ -513,6 +552,14 @@ export default function Settings() {
                 <Label htmlFor="language" className="text-sm font-medium flex items-center gap-2">
                   <Languages className="w-4 h-4" />
                   Language
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Interface language for the restaurant management system</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <Select
                   value={generalSettings.language}
@@ -618,6 +665,14 @@ export default function Settings() {
                   <Label htmlFor="duration" className="flex items-center gap-2">
                     <Timer className="w-4 h-4" />
                     Duration:
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Default length of time allocated for each table booking</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <Select
                     value={`${bookingSettings.defaultDuration} minutes`}
@@ -633,12 +688,12 @@ export default function Settings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="60 minutes">1 hour</SelectItem>
-                      <SelectItem value="90 minutes">1.5 hours</SelectItem>
-                      <SelectItem value="120 minutes">2 hours</SelectItem>
-                      <SelectItem value="150 minutes">2.5 hours</SelectItem>
-                      <SelectItem value="180 minutes">3 hours</SelectItem>
-                      <SelectItem value="240 minutes">4 hours</SelectItem>
+                      <SelectItem value="60 minutes">Test option - 1 hour</SelectItem>
+                      <SelectItem value="90 minutes">Test option - 1.5 hours</SelectItem>
+                      <SelectItem value="120 minutes">Test option - 2 hours</SelectItem>
+                      <SelectItem value="150 minutes">Test option - 2.5 hours</SelectItem>
+                      <SelectItem value="180 minutes">Test option - 3 hours</SelectItem>
+                      <SelectItem value="240 minutes">Test option - 4 hours</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -647,6 +702,14 @@ export default function Settings() {
                   <Label htmlFor="emptySeats" className="flex items-center gap-2">
                     <ChefHat className="w-4 h-4" />
                     Empty seats:
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Minimum empty seats to keep available at each table</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <Select
                     value={bookingSettings.emptySeats.toString()}
@@ -661,11 +724,11 @@ export default function Settings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="0">0</SelectItem>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="0">Test option - 0</SelectItem>
+                      <SelectItem value="1">Test option - 1</SelectItem>
+                      <SelectItem value="2">Test option - 2</SelectItem>
+                      <SelectItem value="3">Test option - 3</SelectItem>
+                      <SelectItem value="4">Test option - 4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -674,6 +737,14 @@ export default function Settings() {
                   <Label htmlFor="turnaroundTime" className="flex items-center gap-2">
                     <Clock3 className="w-4 h-4" />
                     Turnaround time:
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Buffer time between bookings for table preparation</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <Select
                     value={`${bookingSettings.turnaroundTime} min.`}
@@ -689,11 +760,11 @@ export default function Settings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="0 min.">0 min.</SelectItem>
-                      <SelectItem value="15 min.">15 min.</SelectItem>
-                      <SelectItem value="30 min.">30 min.</SelectItem>
-                      <SelectItem value="45 min.">45 min.</SelectItem>
-                      <SelectItem value="60 min.">60 min.</SelectItem>
+                      <SelectItem value="0 min.">Test option - 0 min.</SelectItem>
+                      <SelectItem value="15 min.">Test option - 15 min.</SelectItem>
+                      <SelectItem value="30 min.">Test option - 30 min.</SelectItem>
+                      <SelectItem value="45 min.">Test option - 45 min.</SelectItem>
+                      <SelectItem value="60 min.">Test option - 60 min.</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -702,6 +773,14 @@ export default function Settings() {
                   <Label htmlFor="contactMethod" className="flex items-center gap-2">
                     <Phone className="w-4 h-4" />
                     Contact method:
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Required contact information for booking confirmation</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <Select
                     value={bookingSettings.contactMethod}
@@ -716,9 +795,9 @@ export default function Settings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="phone">Phone</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="both">Both</SelectItem>
+                      <SelectItem value="phone">Test option - Phone</SelectItem>
+                      <SelectItem value="email">Test option - Email</SelectItem>
+                      <SelectItem value="both">Test option - Both</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1538,10 +1617,10 @@ export default function Settings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="15 min.">15 min.</SelectItem>
-                      <SelectItem value="30 min.">30 min.</SelectItem>
-                      <SelectItem value="45 min.">45 min.</SelectItem>
-                      <SelectItem value="60 min.">60 min.</SelectItem>
+                      <SelectItem value="15 min.">Test interval - 15 min.</SelectItem>
+                      <SelectItem value="30 min.">Test interval - 30 min.</SelectItem>
+                      <SelectItem value="45 min.">Test interval - 45 min.</SelectItem>
+                      <SelectItem value="60 min.">Test interval - 60 min.</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1614,6 +1693,14 @@ export default function Settings() {
                 <Label htmlFor="fromName" className="flex items-center gap-2">
                   <Building className="w-4 h-4" />
                   Sender Name
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Business name that appears in customer email signatures</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <Input
                   id="fromName"
@@ -1637,6 +1724,14 @@ export default function Settings() {
                 <Label htmlFor="fromEmail" className="flex items-center gap-2">
                   <AtSign className="w-4 h-4" />
                   Sender Email
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Email address used for all outgoing notifications and confirmations</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <Input
                   id="fromEmail"
@@ -2496,8 +2591,9 @@ export default function Settings() {
               ? "Saving..."
               : "Save All Settings"}
           </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
