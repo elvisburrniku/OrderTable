@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -49,7 +55,12 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { getCurrentTimezone, getTimezoneWithAutoDetection, searchTimezones, type TimezoneInfo } from "@/lib/timezone-utils";
+import {
+  getCurrentTimezone,
+  getTimezoneWithAutoDetection,
+  searchTimezones,
+  type TimezoneInfo,
+} from "@/lib/timezone-utils";
 
 export default function Settings() {
   const { user, restaurant } = useAuth();
@@ -78,8 +89,10 @@ export default function Settings() {
   // Timezone selector state
   const [timezoneOpen, setTimezoneOpen] = useState(false);
   const [timezoneSearch, setTimezoneSearch] = useState("");
-  const [availableTimezones, setAvailableTimezones] = useState<TimezoneInfo[]>([]);
-  
+  const [availableTimezones, setAvailableTimezones] = useState<TimezoneInfo[]>(
+    [],
+  );
+
   // Initialize timezones on mount
   useEffect(() => {
     setAvailableTimezones(getTimezoneWithAutoDetection());
@@ -164,7 +177,9 @@ export default function Settings() {
 
   // Load settings from backend
   const { data: settings, isLoading } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`],
+    queryKey: [
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`,
+    ],
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
@@ -172,32 +187,49 @@ export default function Settings() {
   useEffect(() => {
     if (settings) {
       if (settings.emailSettings) {
-        setEmailSettings(prev => ({ ...prev, ...settings.emailSettings }));
+        setEmailSettings((prev) => ({ ...prev, ...settings.emailSettings }));
       }
       if (settings.generalSettings) {
-        setGeneralSettings(prev => ({ ...prev, ...settings.generalSettings }));
+        setGeneralSettings((prev) => ({
+          ...prev,
+          ...settings.generalSettings,
+        }));
       }
       if (settings.bookingSettings) {
-        setBookingSettings(prev => ({ ...prev, ...settings.bookingSettings }));
+        setBookingSettings((prev) => ({
+          ...prev,
+          ...settings.bookingSettings,
+        }));
       }
       if (settings.notificationSettings) {
-        setNotificationSettings(prev => ({ ...prev, ...settings.notificationSettings }));
+        setNotificationSettings((prev) => ({
+          ...prev,
+          ...settings.notificationSettings,
+        }));
       }
     }
   }, [settings]);
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("PUT", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`, data);
+      const response = await apiRequest(
+        "PUT",
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`,
+        data,
+      );
       return response.json();
     },
     onSuccess: () => {
       // Invalidate all queries to ensure immediate updates across the app
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`] 
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`,
+        ],
       });
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] 
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`,
+        ],
       });
       toast({ title: "Settings updated successfully" });
     },
@@ -237,7 +269,8 @@ export default function Settings() {
             Restaurant Settings
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Configure your restaurant's operational preferences and system behavior
+            Configure your restaurant's operational preferences and system
+            behavior
           </p>
         </div>
 
@@ -249,13 +282,16 @@ export default function Settings() {
               <span>General Settings</span>
             </CardTitle>
             <CardDescription>
-              Configure basic system preferences including timezone, formatting, and regional settings
+              Configure basic system preferences including timezone, formatting,
+              and regional settings
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="timeZone" className="text-sm font-medium">Time Zone</Label>
+                <Label htmlFor="timeZone" className="text-sm font-medium">
+                  Time Zone
+                </Label>
                 <Popover open={timezoneOpen} onOpenChange={setTimezoneOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -267,9 +303,9 @@ export default function Settings() {
                       {generalSettings.timeZone
                         ? (() => {
                             const selectedTz = availableTimezones.find(
-                              (tz) => tz.value === generalSettings.timeZone
+                              (tz) => tz.value === generalSettings.timeZone,
                             );
-                            return selectedTz 
+                            return selectedTz
                               ? `${selectedTz.label} (${selectedTz.offset})`
                               : generalSettings.timeZone;
                           })()
@@ -279,24 +315,24 @@ export default function Settings() {
                   </PopoverTrigger>
                   <PopoverContent className="w-[400px] p-0">
                     <Command>
-                      <CommandInput 
-                        placeholder="Search timezones..." 
+                      <CommandInput
+                        placeholder="Search timezones..."
                         value={timezoneSearch}
                         onValueChange={setTimezoneSearch}
                       />
                       <CommandEmpty>No timezone found.</CommandEmpty>
                       <CommandGroup className="max-h-[300px] overflow-auto">
-                        {(timezoneSearch 
-                          ? searchTimezones(timezoneSearch) 
+                        {(timezoneSearch
+                          ? searchTimezones(timezoneSearch)
                           : availableTimezones
                         ).map((timezone) => (
                           <CommandItem
                             key={timezone.value}
                             value={timezone.value}
                             onSelect={(currentValue) => {
-                              setGeneralSettings({ 
-                                ...generalSettings, 
-                                timeZone: currentValue 
+                              setGeneralSettings({
+                                ...generalSettings,
+                                timeZone: currentValue,
                               });
                               setTimezoneOpen(false);
                               setTimezoneSearch("");
@@ -304,8 +340,8 @@ export default function Settings() {
                           >
                             <Check
                               className={`mr-2 h-4 w-4 ${
-                                generalSettings.timeZone === timezone.value 
-                                  ? "opacity-100" 
+                                generalSettings.timeZone === timezone.value
+                                  ? "opacity-100"
                                   : "opacity-0"
                               }`}
                             />
@@ -314,7 +350,8 @@ export default function Settings() {
                                 {timezone.label}
                               </span>
                               <span className="text-xs text-muted-foreground">
-                                {timezone.city}, {timezone.country} • {timezone.offset}
+                                {timezone.city}, {timezone.country} •{" "}
+                                {timezone.offset}
                               </span>
                             </div>
                           </CommandItem>
@@ -326,31 +363,49 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateFormat" className="text-sm font-medium">Date Format</Label>
+                <Label htmlFor="dateFormat" className="text-sm font-medium">
+                  Date Format
+                </Label>
                 <Select
                   value={generalSettings.dateFormat}
                   onValueChange={(value) =>
-                    setGeneralSettings({ ...generalSettings, dateFormat: value })
+                    setGeneralSettings({
+                      ...generalSettings,
+                      dateFormat: value,
+                    })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select date format" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="MM/dd/yyyy">MM/DD/YYYY (12/25/2024)</SelectItem>
-                    <SelectItem value="dd/MM/yyyy">DD/MM/YYYY (25/12/2024)</SelectItem>
-                    <SelectItem value="yyyy-MM-dd">YYYY-MM-DD (2024-12-25)</SelectItem>
-                    <SelectItem value="MMM dd, yyyy">MMM DD, YYYY (Dec 25, 2024)</SelectItem>
+                    <SelectItem value="MM/dd/yyyy">
+                      MM/DD/YYYY (12/25/2024)
+                    </SelectItem>
+                    <SelectItem value="dd/MM/yyyy">
+                      DD/MM/YYYY (25/12/2024)
+                    </SelectItem>
+                    <SelectItem value="yyyy-MM-dd">
+                      YYYY-MM-DD (2024-12-25)
+                    </SelectItem>
+                    <SelectItem value="MMM dd, yyyy">
+                      MMM DD, YYYY (Dec 25, 2024)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="timeFormat" className="text-sm font-medium">Time Format</Label>
+                <Label htmlFor="timeFormat" className="text-sm font-medium">
+                  Time Format
+                </Label>
                 <Select
                   value={generalSettings.timeFormat}
                   onValueChange={(value) =>
-                    setGeneralSettings({ ...generalSettings, timeFormat: value })
+                    setGeneralSettings({
+                      ...generalSettings,
+                      timeFormat: value,
+                    })
                   }
                 >
                   <SelectTrigger>
@@ -366,7 +421,9 @@ export default function Settings() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="currency" className="text-sm font-medium">Currency</Label>
+                <Label htmlFor="currency" className="text-sm font-medium">
+                  Currency
+                </Label>
                 <Select
                   value={generalSettings.currency}
                   onValueChange={(value) =>
@@ -380,29 +437,49 @@ export default function Settings() {
                     <SelectItem value="USD">USD ($) - US Dollar</SelectItem>
                     <SelectItem value="EUR">EUR (€) - Euro</SelectItem>
                     <SelectItem value="GBP">GBP (£) - British Pound</SelectItem>
-                    <SelectItem value="CAD">CAD (C$) - Canadian Dollar</SelectItem>
-                    <SelectItem value="AUD">AUD (A$) - Australian Dollar</SelectItem>
+                    <SelectItem value="CAD">
+                      CAD (C$) - Canadian Dollar
+                    </SelectItem>
+                    <SelectItem value="AUD">
+                      AUD (A$) - Australian Dollar
+                    </SelectItem>
                     <SelectItem value="JPY">JPY (¥) - Japanese Yen</SelectItem>
                     <SelectItem value="CHF">CHF (₣) - Swiss Franc</SelectItem>
-                    <SelectItem value="SEK">SEK (kr) - Swedish Krona</SelectItem>
-                    <SelectItem value="NOK">NOK (kr) - Norwegian Krone</SelectItem>
+                    <SelectItem value="SEK">
+                      SEK (kr) - Swedish Krona
+                    </SelectItem>
+                    <SelectItem value="NOK">
+                      NOK (kr) - Norwegian Krone
+                    </SelectItem>
                     <SelectItem value="DKK">DKK (kr) - Danish Krone</SelectItem>
                     <SelectItem value="PLN">PLN (zł) - Polish Złoty</SelectItem>
                     <SelectItem value="CZK">CZK (Kč) - Czech Koruna</SelectItem>
                     <SelectItem value="INR">INR (₹) - Indian Rupee</SelectItem>
                     <SelectItem value="CNY">CNY (¥) - Chinese Yuan</SelectItem>
-                    <SelectItem value="KRW">KRW (₩) - South Korean Won</SelectItem>
-                    <SelectItem value="SGD">SGD (S$) - Singapore Dollar</SelectItem>
-                    <SelectItem value="HKD">HKD (HK$) - Hong Kong Dollar</SelectItem>
-                    <SelectItem value="NZD">NZD (NZ$) - New Zealand Dollar</SelectItem>
+                    <SelectItem value="KRW">
+                      KRW (₩) - South Korean Won
+                    </SelectItem>
+                    <SelectItem value="SGD">
+                      SGD (S$) - Singapore Dollar
+                    </SelectItem>
+                    <SelectItem value="HKD">
+                      HKD (HK$) - Hong Kong Dollar
+                    </SelectItem>
+                    <SelectItem value="NZD">
+                      NZD (NZ$) - New Zealand Dollar
+                    </SelectItem>
                     <SelectItem value="MXN">MXN ($) - Mexican Peso</SelectItem>
-                    <SelectItem value="BRL">BRL (R$) - Brazilian Real</SelectItem>
+                    <SelectItem value="BRL">
+                      BRL (R$) - Brazilian Real
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language" className="text-sm font-medium">Language</Label>
+                <Label htmlFor="language" className="text-sm font-medium">
+                  Language
+                </Label>
                 <Select
                   value={generalSettings.language}
                   onValueChange={(value) =>
@@ -418,7 +495,9 @@ export default function Settings() {
                     <SelectItem value="fr">🇫🇷 Français (French)</SelectItem>
                     <SelectItem value="de">🇩🇪 Deutsch (German)</SelectItem>
                     <SelectItem value="it">🇮🇹 Italiano (Italian)</SelectItem>
-                    <SelectItem value="pt">🇵🇹 Português (Portuguese)</SelectItem>
+                    <SelectItem value="pt">
+                      🇵🇹 Português (Portuguese)
+                    </SelectItem>
                     <SelectItem value="nl">🇳🇱 Nederlands (Dutch)</SelectItem>
                     <SelectItem value="sv">🇸🇪 Svenska (Swedish)</SelectItem>
                     <SelectItem value="da">🇩🇰 Dansk (Danish)</SelectItem>
@@ -436,8 +515,13 @@ export default function Settings() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="defaultDuration" className="text-sm font-medium">Default Booking Duration (minutes)</Label>
+              {/* <div className="space-y-2">
+                <Label
+                  htmlFor="defaultDuration"
+                  className="text-sm font-medium"
+                >
+                  Default Booking Duration (minutes)
+                </Label>
                 <Input
                   id="defaultDuration"
                   type="number"
@@ -453,10 +537,10 @@ export default function Settings() {
                   }
                   className="w-full"
                 />
-              </div>
+              </div> */}
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="maxAdvance" className="text-sm font-medium">Maximum Advance Booking Days</Label>
               <Input
                 id="maxAdvance"
@@ -475,7 +559,7 @@ export default function Settings() {
               <p className="text-sm text-gray-500 mt-1">
                 How far in advance customers can make reservations
               </p>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
 
@@ -487,7 +571,8 @@ export default function Settings() {
               <span>Booking Settings</span>
             </CardTitle>
             <CardDescription>
-              Configure detailed booking policies, timing, and operational preferences
+              Configure detailed booking policies, timing, and operational
+              preferences
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-8">
@@ -500,8 +585,11 @@ export default function Settings() {
                   <Select
                     value={`${bookingSettings.defaultDuration} minutes`}
                     onValueChange={(value) => {
-                      const minutes = parseInt(value.split(' ')[0]);
-                      setBookingSettings({ ...bookingSettings, defaultDuration: minutes });
+                      const minutes = parseInt(value.split(" ")[0]);
+                      setBookingSettings({
+                        ...bookingSettings,
+                        defaultDuration: minutes,
+                      });
                     }}
                   >
                     <SelectTrigger>
@@ -523,7 +611,10 @@ export default function Settings() {
                   <Select
                     value={bookingSettings.emptySeats.toString()}
                     onValueChange={(value) =>
-                      setBookingSettings({ ...bookingSettings, emptySeats: parseInt(value) })
+                      setBookingSettings({
+                        ...bookingSettings,
+                        emptySeats: parseInt(value),
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -544,8 +635,11 @@ export default function Settings() {
                   <Select
                     value={`${bookingSettings.turnaroundTime} min.`}
                     onValueChange={(value) => {
-                      const minutes = parseInt(value.split(' ')[0]);
-                      setBookingSettings({ ...bookingSettings, turnaroundTime: minutes });
+                      const minutes = parseInt(value.split(" ")[0]);
+                      setBookingSettings({
+                        ...bookingSettings,
+                        turnaroundTime: minutes,
+                      });
                     }}
                   >
                     <SelectTrigger>
@@ -566,7 +660,10 @@ export default function Settings() {
                   <Select
                     value={bookingSettings.contactMethod}
                     onValueChange={(value) =>
-                      setBookingSettings({ ...bookingSettings, contactMethod: value })
+                      setBookingSettings({
+                        ...bookingSettings,
+                        contactMethod: value,
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -586,7 +683,10 @@ export default function Settings() {
                   <Switch
                     checked={bookingSettings.useEndingTime}
                     onCheckedChange={(checked) =>
-                      setBookingSettings({ ...bookingSettings, useEndingTime: checked })
+                      setBookingSettings({
+                        ...bookingSettings,
+                        useEndingTime: checked,
+                      })
                     }
                   />
                   <Label>Use ending time:</Label>
@@ -596,11 +696,15 @@ export default function Settings() {
                   <div>
                     <Label>Allow cancellation and changes:</Label>
                     <Select
-                      value={bookingSettings.allowCancellationAndChanges ? "Yes" : "No"}
+                      value={
+                        bookingSettings.allowCancellationAndChanges
+                          ? "Yes"
+                          : "No"
+                      }
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          allowCancellationAndChanges: value === "Yes" 
+                        setBookingSettings({
+                          ...bookingSettings,
+                          allowCancellationAndChanges: value === "Yes",
                         })
                       }
                     >
@@ -619,7 +723,10 @@ export default function Settings() {
                     <Select
                       value={bookingSettings.cancellationNotice}
                       onValueChange={(value) =>
-                        setBookingSettings({ ...bookingSettings, cancellationNotice: value })
+                        setBookingSettings({
+                          ...bookingSettings,
+                          cancellationNotice: value,
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -640,7 +747,10 @@ export default function Settings() {
                   <Switch
                     checked={bookingSettings.groupRequest}
                     onCheckedChange={(checked) =>
-                      setBookingSettings({ ...bookingSettings, groupRequest: checked })
+                      setBookingSettings({
+                        ...bookingSettings,
+                        groupRequest: checked,
+                      })
                     }
                   />
                   <Label>Group Request</Label>
@@ -653,7 +763,10 @@ export default function Settings() {
                       <Switch
                         checked={bookingSettings.enableWaitingList}
                         onCheckedChange={(checked) =>
-                          setBookingSettings({ ...bookingSettings, enableWaitingList: checked })
+                          setBookingSettings({
+                            ...bookingSettings,
+                            enableWaitingList: checked,
+                          })
                         }
                       />
                       <span className="text-sm">Enable</span>
@@ -662,19 +775,29 @@ export default function Settings() {
                       <Switch
                         checked={bookingSettings.autoWaitingList || false}
                         onCheckedChange={(checked) =>
-                          setBookingSettings({ ...bookingSettings, autoWaitingList: checked })
+                          setBookingSettings({
+                            ...bookingSettings,
+                            autoWaitingList: checked,
+                          })
                         }
                       />
                       <span className="text-sm">Automate the waiting list</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
-                        checked={bookingSettings.waitingListOnlyNoTimes || false}
+                        checked={
+                          bookingSettings.waitingListOnlyNoTimes || false
+                        }
                         onCheckedChange={(checked) =>
-                          setBookingSettings({ ...bookingSettings, waitingListOnlyNoTimes: checked })
+                          setBookingSettings({
+                            ...bookingSettings,
+                            waitingListOnlyNoTimes: checked,
+                          })
                         }
                       />
-                      <span className="text-sm">Only use waiting list if no available times</span>
+                      <span className="text-sm">
+                        Only use waiting list if no available times
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -684,15 +807,22 @@ export default function Settings() {
                   <Select
                     value={bookingSettings.tableBooking}
                     onValueChange={(value) =>
-                      setBookingSettings({ ...bookingSettings, tableBooking: value })
+                      setBookingSettings({
+                        ...bookingSettings,
+                        tableBooking: value,
+                      })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="recommended">Book with tables (recommended)</SelectItem>
-                      <SelectItem value="required">Book with tables (required)</SelectItem>
+                      <SelectItem value="recommended">
+                        Book with tables (recommended)
+                      </SelectItem>
+                      <SelectItem value="required">
+                        Book with tables (required)
+                      </SelectItem>
                       <SelectItem value="disabled">Disabled</SelectItem>
                     </SelectContent>
                   </Select>
@@ -703,7 +833,10 @@ export default function Settings() {
                   <Select
                     value={bookingSettings.personalDataStorage}
                     onValueChange={(value) =>
-                      setBookingSettings({ ...bookingSettings, personalDataStorage: value })
+                      setBookingSettings({
+                        ...bookingSettings,
+                        personalDataStorage: value,
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -728,14 +861,16 @@ export default function Settings() {
                       <div className="flex gap-4 mt-2">
                         <div className="flex items-center space-x-2">
                           <Switch
-                            checked={bookingSettings.showCompanyNameField.manual}
+                            checked={
+                              bookingSettings.showCompanyNameField.manual
+                            }
                             onCheckedChange={(checked) =>
-                              setBookingSettings({ 
-                                ...bookingSettings, 
-                                showCompanyNameField: { 
-                                  ...bookingSettings.showCompanyNameField, 
-                                  manual: checked 
-                                }
+                              setBookingSettings({
+                                ...bookingSettings,
+                                showCompanyNameField: {
+                                  ...bookingSettings.showCompanyNameField,
+                                  manual: checked,
+                                },
                               })
                             }
                           />
@@ -743,18 +878,22 @@ export default function Settings() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch
-                            checked={bookingSettings.showCompanyNameField.online}
+                            checked={
+                              bookingSettings.showCompanyNameField.online
+                            }
                             onCheckedChange={(checked) =>
-                              setBookingSettings({ 
-                                ...bookingSettings, 
-                                showCompanyNameField: { 
-                                  ...bookingSettings.showCompanyNameField, 
-                                  online: checked 
-                                }
+                              setBookingSettings({
+                                ...bookingSettings,
+                                showCompanyNameField: {
+                                  ...bookingSettings.showCompanyNameField,
+                                  online: checked,
+                                },
                               })
                             }
                           />
-                          <span className="text-sm">Both manual and online booking</span>
+                          <span className="text-sm">
+                            Both manual and online booking
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -766,12 +905,12 @@ export default function Settings() {
                           <Switch
                             checked={bookingSettings.showRoomNumberField.manual}
                             onCheckedChange={(checked) =>
-                              setBookingSettings({ 
-                                ...bookingSettings, 
-                                showRoomNumberField: { 
-                                  ...bookingSettings.showRoomNumberField, 
-                                  manual: checked 
-                                }
+                              setBookingSettings({
+                                ...bookingSettings,
+                                showRoomNumberField: {
+                                  ...bookingSettings.showRoomNumberField,
+                                  manual: checked,
+                                },
                               })
                             }
                           />
@@ -781,16 +920,18 @@ export default function Settings() {
                           <Switch
                             checked={bookingSettings.showRoomNumberField.online}
                             onCheckedChange={(checked) =>
-                              setBookingSettings({ 
-                                ...bookingSettings, 
-                                showRoomNumberField: { 
-                                  ...bookingSettings.showRoomNumberField, 
-                                  online: checked 
-                                }
+                              setBookingSettings({
+                                ...bookingSettings,
+                                showRoomNumberField: {
+                                  ...bookingSettings.showRoomNumberField,
+                                  online: checked,
+                                },
                               })
                             }
                           />
-                          <span className="text-sm">Both manual and online booking</span>
+                          <span className="text-sm">
+                            Both manual and online booking
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -799,7 +940,10 @@ export default function Settings() {
                       <Switch
                         checked={bookingSettings.showAgreedPriceField}
                         onCheckedChange={(checked) =>
-                          setBookingSettings({ ...bookingSettings, showAgreedPriceField: checked })
+                          setBookingSettings({
+                            ...bookingSettings,
+                            showAgreedPriceField: checked,
+                          })
                         }
                       />
                       <Label>Show Agreed Price field:</Label>
@@ -812,12 +956,12 @@ export default function Settings() {
                           <Switch
                             checked={bookingSettings.showPromoCodeField.manual}
                             onCheckedChange={(checked) =>
-                              setBookingSettings({ 
-                                ...bookingSettings, 
-                                showPromoCodeField: { 
-                                  ...bookingSettings.showPromoCodeField, 
-                                  manual: checked 
-                                }
+                              setBookingSettings({
+                                ...bookingSettings,
+                                showPromoCodeField: {
+                                  ...bookingSettings.showPromoCodeField,
+                                  manual: checked,
+                                },
                               })
                             }
                           />
@@ -827,16 +971,18 @@ export default function Settings() {
                           <Switch
                             checked={bookingSettings.showPromoCodeField.online}
                             onCheckedChange={(checked) =>
-                              setBookingSettings({ 
-                                ...bookingSettings, 
-                                showPromoCodeField: { 
-                                  ...bookingSettings.showPromoCodeField, 
-                                  online: checked 
-                                }
+                              setBookingSettings({
+                                ...bookingSettings,
+                                showPromoCodeField: {
+                                  ...bookingSettings.showPromoCodeField,
+                                  online: checked,
+                                },
                               })
                             }
                           />
-                          <span className="text-sm">Both manual and online booking</span>
+                          <span className="text-sm">
+                            Both manual and online booking
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -849,7 +995,9 @@ export default function Settings() {
 
             {/* Online Booking Settings */}
             <div>
-              <h4 className="text-lg font-medium mb-4">Online booking (on website)</h4>
+              <h4 className="text-lg font-medium mb-4">
+                Online booking (on website)
+              </h4>
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -857,12 +1005,12 @@ export default function Settings() {
                     <Select
                       value={bookingSettings.onlineBooking.bookingFlow}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            bookingFlow: value 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            bookingFlow: value,
+                          },
                         })
                       }
                     >
@@ -870,8 +1018,12 @@ export default function Settings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="guest_first">Guest selects booking type first, then date and time</SelectItem>
-                        <SelectItem value="date_first">Guest selects date and time first, then booking type</SelectItem>
+                        <SelectItem value="guest_first">
+                          Guest selects booking type first, then date and time
+                        </SelectItem>
+                        <SelectItem value="date_first">
+                          Guest selects date and time first, then booking type
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -881,12 +1033,12 @@ export default function Settings() {
                     <Select
                       value={bookingSettings.onlineBooking.minGuests.toString()}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            minGuests: parseInt(value) 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            minGuests: parseInt(value),
+                          },
                         })
                       }
                     >
@@ -894,8 +1046,10 @@ export default function Settings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                          <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -906,12 +1060,12 @@ export default function Settings() {
                     <Select
                       value={bookingSettings.onlineBooking.maxGuests.toString()}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            maxGuests: parseInt(value) 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            maxGuests: parseInt(value),
+                          },
                         })
                       }
                     >
@@ -919,8 +1073,10 @@ export default function Settings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[2,4,6,8,10,12,15,20,25,30].map(num => (
-                          <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                        {[2, 4, 6, 8, 10, 12, 15, 20, 25, 30].map((num) => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -931,12 +1087,12 @@ export default function Settings() {
                     <Select
                       value={`${bookingSettings.onlineBooking.minNotice} hour`}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            minNotice: parseFloat(value.split(' ')[0])
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            minNotice: parseFloat(value.split(" ")[0]),
+                          },
                         })
                       }
                     >
@@ -960,12 +1116,12 @@ export default function Settings() {
                     <Select
                       value={`${bookingSettings.onlineBooking.maxNotice} days`}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            maxNotice: parseInt(value.split(' ')[0])
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            maxNotice: parseInt(value.split(" ")[0]),
+                          },
                         })
                       }
                     >
@@ -988,12 +1144,12 @@ export default function Settings() {
                     <Select
                       value={`${bookingSettings.onlineBooking.interval} min.`}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            interval: parseInt(value.split(' ')[0])
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            interval: parseInt(value.split(" ")[0]),
+                          },
                         })
                       }
                     >
@@ -1016,12 +1172,12 @@ export default function Settings() {
                     <Select
                       value={bookingSettings.onlineBooking.maxBookingsPerTime}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            maxBookingsPerTime: value 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            maxBookingsPerTime: value,
+                          },
                         })
                       }
                     >
@@ -1044,12 +1200,12 @@ export default function Settings() {
                     <Select
                       value={bookingSettings.onlineBooking.maxGuestsPerTime}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            maxGuestsPerTime: value 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            maxGuestsPerTime: value,
+                          },
                         })
                       }
                     >
@@ -1072,12 +1228,12 @@ export default function Settings() {
                     <Select
                       value={bookingSettings.onlineBooking.maxCapacity}
                       onValueChange={(value) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            maxCapacity: value 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            maxCapacity: value,
+                          },
                         })
                       }
                     >
@@ -1100,12 +1256,12 @@ export default function Settings() {
                     <Switch
                       checked={bookingSettings.onlineBooking.collectEmail}
                       onCheckedChange={(checked) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            collectEmail: checked 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            collectEmail: checked,
+                          },
                         })
                       }
                     />
@@ -1116,12 +1272,12 @@ export default function Settings() {
                     <Switch
                       checked={bookingSettings.onlineBooking.emailRequired}
                       onCheckedChange={(checked) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            emailRequired: checked 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            emailRequired: checked,
+                          },
                         })
                       }
                     />
@@ -1133,14 +1289,17 @@ export default function Settings() {
                     <div className="flex gap-4 mt-2">
                       <div className="flex items-center space-x-2">
                         <Switch
-                          checked={bookingSettings.onlineBooking.collectAddress === "zipcode"}
+                          checked={
+                            bookingSettings.onlineBooking.collectAddress ===
+                            "zipcode"
+                          }
                           onCheckedChange={(checked) =>
-                            setBookingSettings({ 
-                              ...bookingSettings, 
-                              onlineBooking: { 
-                                ...bookingSettings.onlineBooking, 
-                                collectAddress: checked ? "zipcode" : "none" 
-                              }
+                            setBookingSettings({
+                              ...bookingSettings,
+                              onlineBooking: {
+                                ...bookingSettings.onlineBooking,
+                                collectAddress: checked ? "zipcode" : "none",
+                              },
                             })
                           }
                         />
@@ -1148,14 +1307,17 @@ export default function Settings() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Switch
-                          checked={bookingSettings.onlineBooking.collectAddress === "full"}
+                          checked={
+                            bookingSettings.onlineBooking.collectAddress ===
+                            "full"
+                          }
                           onCheckedChange={(checked) =>
-                            setBookingSettings({ 
-                              ...bookingSettings, 
-                              onlineBooking: { 
-                                ...bookingSettings.onlineBooking, 
-                                collectAddress: checked ? "full" : "none" 
-                              }
+                            setBookingSettings({
+                              ...bookingSettings,
+                              onlineBooking: {
+                                ...bookingSettings.onlineBooking,
+                                collectAddress: checked ? "full" : "none",
+                              },
                             })
                           }
                         />
@@ -1168,12 +1330,12 @@ export default function Settings() {
                     <Switch
                       checked={bookingSettings.onlineBooking.confirmNewsletter}
                       onCheckedChange={(checked) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            confirmNewsletter: checked 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            confirmNewsletter: checked,
+                          },
                         })
                       }
                     />
@@ -1184,12 +1346,12 @@ export default function Settings() {
                     <Switch
                       checked={bookingSettings.onlineBooking.confirmDuration}
                       onCheckedChange={(checked) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            confirmDuration: checked 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            confirmDuration: checked,
+                          },
                         })
                       }
                     />
@@ -1204,31 +1366,33 @@ export default function Settings() {
                       placeholder="https://yourrestaurant.com/booking-confirmed"
                       value={bookingSettings.onlineBooking.confirmUrl}
                       onChange={(e) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            confirmUrl: e.target.value 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            confirmUrl: e.target.value,
+                          },
                         })
                       }
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="privacyPolicyUrl">Privacy Policy URL:</Label>
+                    <Label htmlFor="privacyPolicyUrl">
+                      Privacy Policy URL:
+                    </Label>
                     <Input
                       id="privacyPolicyUrl"
                       type="url"
                       placeholder="https://yourrestaurant.com/privacy-policy"
                       value={bookingSettings.onlineBooking.privacyPolicyUrl}
                       onChange={(e) =>
-                        setBookingSettings({ 
-                          ...bookingSettings, 
-                          onlineBooking: { 
-                            ...bookingSettings.onlineBooking, 
-                            privacyPolicyUrl: e.target.value 
-                          }
+                        setBookingSettings({
+                          ...bookingSettings,
+                          onlineBooking: {
+                            ...bookingSettings.onlineBooking,
+                            privacyPolicyUrl: e.target.value,
+                          },
                         })
                       }
                     />
@@ -1241,18 +1405,20 @@ export default function Settings() {
 
             {/* Manual Booking (Administration) */}
             <div>
-              <h4 className="text-lg font-medium mb-4">Manual booking (administration)</h4>
+              <h4 className="text-lg font-medium mb-4">
+                Manual booking (administration)
+              </h4>
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Switch
                     checked={bookingSettings.manualBooking.tableSuggestions}
                     onCheckedChange={(checked) =>
-                      setBookingSettings({ 
-                        ...bookingSettings, 
-                        manualBooking: { 
-                          ...bookingSettings.manualBooking, 
-                          tableSuggestions: checked 
-                        }
+                      setBookingSettings({
+                        ...bookingSettings,
+                        manualBooking: {
+                          ...bookingSettings.manualBooking,
+                          tableSuggestions: checked,
+                        },
                       })
                     }
                   />
@@ -1264,12 +1430,12 @@ export default function Settings() {
                   <Select
                     value={`${bookingSettings.manualBooking.interval} min.`}
                     onValueChange={(value) =>
-                      setBookingSettings({ 
-                        ...bookingSettings, 
-                        manualBooking: { 
-                          ...bookingSettings.manualBooking, 
-                          interval: parseInt(value.split(' ')[0])
-                        }
+                      setBookingSettings({
+                        ...bookingSettings,
+                        manualBooking: {
+                          ...bookingSettings.manualBooking,
+                          interval: parseInt(value.split(" ")[0]),
+                        },
                       })
                     }
                   >
@@ -1289,12 +1455,12 @@ export default function Settings() {
                   <Switch
                     checked={bookingSettings.manualBooking.initialsRequired}
                     onCheckedChange={(checked) =>
-                      setBookingSettings({ 
-                        ...bookingSettings, 
-                        manualBooking: { 
-                          ...bookingSettings.manualBooking, 
-                          initialsRequired: checked 
-                        }
+                      setBookingSettings({
+                        ...bookingSettings,
+                        manualBooking: {
+                          ...bookingSettings.manualBooking,
+                          initialsRequired: checked,
+                        },
                       })
                     }
                   />
@@ -1310,14 +1476,16 @@ export default function Settings() {
               <h4 className="text-lg font-medium mb-4">Administration</h4>
               <div className="flex items-center space-x-2">
                 <Switch
-                  checked={bookingSettings.administration.newBookingNotification}
+                  checked={
+                    bookingSettings.administration.newBookingNotification
+                  }
                   onCheckedChange={(checked) =>
-                    setBookingSettings({ 
-                      ...bookingSettings, 
-                      administration: { 
-                        ...bookingSettings.administration, 
-                        newBookingNotification: checked 
-                      }
+                    setBookingSettings({
+                      ...bookingSettings,
+                      administration: {
+                        ...bookingSettings.administration,
+                        newBookingNotification: checked,
+                      },
                     })
                   }
                 />
@@ -1335,7 +1503,8 @@ export default function Settings() {
               <span>Email Communication Settings</span>
             </CardTitle>
             <CardDescription>
-              Configure email templates, sender information, and automated communications
+              Configure email templates, sender information, and automated
+              communications
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -1442,7 +1611,9 @@ export default function Settings() {
                 <div className="space-y-4">
                   {emailSettings.enableBookingReminders && (
                     <div>
-                      <Label htmlFor="reminderHours">Reminder Time Before Booking</Label>
+                      <Label htmlFor="reminderHours">
+                        Reminder Time Before Booking
+                      </Label>
                       <Select
                         value={emailSettings.reminderHoursBefore.toString()}
                         onValueChange={(value) =>
@@ -1481,13 +1652,16 @@ export default function Settings() {
               <span>Notification & Alert Settings</span>
             </CardTitle>
             <CardDescription>
-              Control how and when you receive notifications about restaurant activities
+              Control how and when you receive notifications about restaurant
+              activities
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Notification Channels</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Notification Channels
+                </h4>
 
                 <div className="flex items-center justify-between">
                   <div>
@@ -1499,7 +1673,10 @@ export default function Settings() {
                   <Switch
                     checked={notificationSettings.emailNotifications}
                     onCheckedChange={(checked) =>
-                      setNotificationSettings({ ...notificationSettings, emailNotifications: checked })
+                      setNotificationSettings({
+                        ...notificationSettings,
+                        emailNotifications: checked,
+                      })
                     }
                   />
                 </div>
@@ -1514,7 +1691,10 @@ export default function Settings() {
                   <Switch
                     checked={notificationSettings.smsNotifications}
                     onCheckedChange={(checked) =>
-                      setNotificationSettings({ ...notificationSettings, smsNotifications: checked })
+                      setNotificationSettings({
+                        ...notificationSettings,
+                        smsNotifications: checked,
+                      })
                     }
                   />
                 </div>
@@ -1529,14 +1709,19 @@ export default function Settings() {
                   <Switch
                     checked={notificationSettings.pushNotifications}
                     onCheckedChange={(checked) =>
-                      setNotificationSettings({ ...notificationSettings, pushNotifications: checked })
+                      setNotificationSettings({
+                        ...notificationSettings,
+                        pushNotifications: checked,
+                      })
                     }
                   />
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Alert Types</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Alert Types
+                </h4>
 
                 <div className="flex items-center justify-between">
                   <div>
@@ -1548,7 +1733,10 @@ export default function Settings() {
                   <Switch
                     checked={notificationSettings.bookingReminders}
                     onCheckedChange={(checked) =>
-                      setNotificationSettings({ ...notificationSettings, bookingReminders: checked })
+                      setNotificationSettings({
+                        ...notificationSettings,
+                        bookingReminders: checked,
+                      })
                     }
                   />
                 </div>
@@ -1563,7 +1751,10 @@ export default function Settings() {
                   <Switch
                     checked={notificationSettings.cancelationAlerts}
                     onCheckedChange={(checked) =>
-                      setNotificationSettings({ ...notificationSettings, cancelationAlerts: checked })
+                      setNotificationSettings({
+                        ...notificationSettings,
+                        cancelationAlerts: checked,
+                      })
                     }
                   />
                 </div>
@@ -1578,7 +1769,10 @@ export default function Settings() {
                   <Switch
                     checked={notificationSettings.noShowAlerts}
                     onCheckedChange={(checked) =>
-                      setNotificationSettings({ ...notificationSettings, noShowAlerts: checked })
+                      setNotificationSettings({
+                        ...notificationSettings,
+                        noShowAlerts: checked,
+                      })
                     }
                   />
                 </div>
@@ -1595,13 +1789,16 @@ export default function Settings() {
               <span>Kitchen & Operations</span>
             </CardTitle>
             <CardDescription>
-              Configure kitchen workflow, service options, and operational preferences
+              Configure kitchen workflow, service options, and operational
+              preferences
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Service Options</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Service Options
+                </h4>
 
                 <div className="flex items-center justify-between">
                   <div>
@@ -1614,7 +1811,9 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Takeout Orders</Label>
-                    <p className="text-sm text-gray-500">Customer pickup orders</p>
+                    <p className="text-sm text-gray-500">
+                      Customer pickup orders
+                    </p>
                   </div>
                   <Switch defaultChecked />
                 </div>
@@ -1622,13 +1821,17 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Delivery Service</Label>
-                    <p className="text-sm text-gray-500">Home delivery options</p>
+                    <p className="text-sm text-gray-500">
+                      Home delivery options
+                    </p>
                   </div>
                   <Switch />
                 </div>
 
                 <div>
-                  <Label htmlFor="deliveryRadius">Delivery Radius (miles)</Label>
+                  <Label htmlFor="deliveryRadius">
+                    Delivery Radius (miles)
+                  </Label>
                   <Input
                     id="deliveryRadius"
                     type="number"
@@ -1640,10 +1843,14 @@ export default function Settings() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Kitchen Operations</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Kitchen Operations
+                </h4>
 
                 <div>
-                  <Label htmlFor="avgServiceTime">Average Service Time (minutes)</Label>
+                  <Label htmlFor="avgServiceTime">
+                    Average Service Time (minutes)
+                  </Label>
                   <Select defaultValue="90">
                     <SelectTrigger>
                       <SelectValue />
@@ -1661,13 +1868,17 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Special Requests</Label>
-                    <p className="text-sm text-gray-500">Allow dietary modifications</p>
+                    <p className="text-sm text-gray-500">
+                      Allow dietary modifications
+                    </p>
                   </div>
                   <Switch defaultChecked />
                 </div>
 
                 <div>
-                  <Label htmlFor="noShowGrace">No-Show Grace Period (minutes)</Label>
+                  <Label htmlFor="noShowGrace">
+                    No-Show Grace Period (minutes)
+                  </Label>
                   <Select defaultValue="15">
                     <SelectTrigger>
                       <SelectValue />
@@ -1682,7 +1893,9 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <Label htmlFor="tableRelease">Auto Table Release (minutes)</Label>
+                  <Label htmlFor="tableRelease">
+                    Auto Table Release (minutes)
+                  </Label>
                   <Select defaultValue="30">
                     <SelectTrigger>
                       <SelectValue />
@@ -1714,12 +1927,16 @@ export default function Settings() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Accepted Payment Methods</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Accepted Payment Methods
+                </h4>
 
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Credit/Debit Cards</Label>
-                    <p className="text-sm text-gray-500">Visa, Mastercard, Amex</p>
+                    <p className="text-sm text-gray-500">
+                      Visa, Mastercard, Amex
+                    </p>
                   </div>
                   <Switch defaultChecked />
                 </div>
@@ -1735,7 +1952,9 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Digital Payments</Label>
-                    <p className="text-sm text-gray-500">Apple Pay, Google Pay</p>
+                    <p className="text-sm text-gray-500">
+                      Apple Pay, Google Pay
+                    </p>
                   </div>
                   <Switch defaultChecked />
                 </div>
@@ -1743,7 +1962,9 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Require Deposit for Large Groups</Label>
-                    <p className="text-sm text-gray-500">Security deposit requirement</p>
+                    <p className="text-sm text-gray-500">
+                      Security deposit requirement
+                    </p>
                   </div>
                   <Switch defaultChecked />
                 </div>
@@ -1765,7 +1986,9 @@ export default function Settings() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Policies</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Policies
+                </h4>
 
                 <div>
                   <Label>Cancellation Policy</Label>
@@ -1790,7 +2013,9 @@ export default function Settings() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="full">Full refund</SelectItem>
-                      <SelectItem value="partial">Partial refund (50%)</SelectItem>
+                      <SelectItem value="partial">
+                        Partial refund (50%)
+                      </SelectItem>
                       <SelectItem value="credit">Store credit only</SelectItem>
                       <SelectItem value="none">No refunds</SelectItem>
                     </SelectContent>
@@ -1842,12 +2067,16 @@ export default function Settings() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Loyalty & Rewards</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Loyalty & Rewards
+                </h4>
 
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Enable Loyalty Program</Label>
-                    <p className="text-sm text-gray-500">Points-based rewards</p>
+                    <p className="text-sm text-gray-500">
+                      Points-based rewards
+                    </p>
                   </div>
                   <Switch />
                 </div>
@@ -1855,7 +2084,9 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Birthday Rewards</Label>
-                    <p className="text-sm text-gray-500">Special birthday offers</p>
+                    <p className="text-sm text-gray-500">
+                      Special birthday offers
+                    </p>
                   </div>
                   <Switch />
                 </div>
@@ -1888,12 +2119,16 @@ export default function Settings() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Communication Preferences</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Communication Preferences
+                </h4>
 
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Automated Thank You Messages</Label>
-                    <p className="text-sm text-gray-500">Post-visit appreciation</p>
+                    <p className="text-sm text-gray-500">
+                      Post-visit appreciation
+                    </p>
                   </div>
                   <Switch defaultChecked />
                 </div>
@@ -1901,7 +2136,9 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Special Event Invitations</Label>
-                    <p className="text-sm text-gray-500">Private events & tastings</p>
+                    <p className="text-sm text-gray-500">
+                      Private events & tastings
+                    </p>
                   </div>
                   <Switch />
                 </div>
@@ -1948,12 +2185,16 @@ export default function Settings() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Promotional Features</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Promotional Features
+                </h4>
 
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Happy Hour Specials</Label>
-                    <p className="text-sm text-gray-500">Time-based discounts</p>
+                    <p className="text-sm text-gray-500">
+                      Time-based discounts
+                    </p>
                   </div>
                   <Switch />
                 </div>
@@ -1961,7 +2202,9 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Early Bird Discounts</Label>
-                    <p className="text-sm text-gray-500">Morning reservations</p>
+                    <p className="text-sm text-gray-500">
+                      Morning reservations
+                    </p>
                   </div>
                   <Switch />
                 </div>
@@ -1984,15 +2227,14 @@ export default function Settings() {
 
                 <div>
                   <Label htmlFor="promoCode">Default Promo Code</Label>
-                  <Input
-                    id="promoCode"
-                    placeholder="WELCOME10"
-                  />
+                  <Input id="promoCode" placeholder="WELCOME10" />
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Social Media Integration</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Social Media Integration
+                </h4>
 
                 <div className="flex items-center justify-between">
                   <div>
@@ -2020,18 +2262,12 @@ export default function Settings() {
 
                 <div>
                   <Label htmlFor="hashtag">Restaurant Hashtag</Label>
-                  <Input
-                    id="hashtag"
-                    placeholder="#YourRestaurant"
-                  />
+                  <Input id="hashtag" placeholder="#YourRestaurant" />
                 </div>
 
                 <div>
                   <Label htmlFor="socialHandle">Social Media Handle</Label>
-                  <Input
-                    id="socialHandle"
-                    placeholder="@yourrestaurant"
-                  />
+                  <Input id="socialHandle" placeholder="@yourrestaurant" />
                 </div>
               </div>
             </div>
@@ -2052,15 +2288,20 @@ export default function Settings() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Data & Privacy</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Data & Privacy
+                </h4>
 
                 <div className="p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
                   <div className="flex items-start space-x-3">
                     <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
                     <div>
-                      <h5 className="font-medium text-yellow-800 dark:text-yellow-200">Data Retention</h5>
+                      <h5 className="font-medium text-yellow-800 dark:text-yellow-200">
+                        Data Retention
+                      </h5>
                       <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                        Customer data is automatically purged after 2 years of inactivity, as per GDPR compliance requirements.
+                        Customer data is automatically purged after 2 years of
+                        inactivity, as per GDPR compliance requirements.
                       </p>
                     </div>
                   </div>
@@ -2069,13 +2310,16 @@ export default function Settings() {
                 <div>
                   <Label>System Timezone Display</Label>
                   <p className="text-sm text-gray-500 mt-1">
-                    All times are displayed in your selected timezone: <strong>{generalSettings.timeZone}</strong>
+                    All times are displayed in your selected timezone:{" "}
+                    <strong>{generalSettings.timeZone}</strong>
                   </p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 dark:text-white">Integration Status</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Integration Status
+                </h4>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -2083,7 +2327,9 @@ export default function Settings() {
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-sm">Email Service</span>
                     </div>
-                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">Connected</span>
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                      Connected
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -2091,7 +2337,9 @@ export default function Settings() {
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <span className="text-sm">Payment Processing</span>
                     </div>
-                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">Active</span>
+                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                      Active
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -2099,7 +2347,9 @@ export default function Settings() {
                       <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                       <span className="text-sm">SMS Service</span>
                     </div>
-                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">Available</span>
+                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                      Available
+                    </span>
                   </div>
                 </div>
               </div>
