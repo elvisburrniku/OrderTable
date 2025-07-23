@@ -11,7 +11,7 @@ import { Calendar, Users, Clock, Mail, Phone, Filter, Plus, Edit, Trash2, Eye, M
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
 import { useLocation } from 'wouter';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useSettings } from '@/hooks/use-settings';
 import { formatDate, formatTime } from '@/lib/time-formatter';
 import { apiRequest } from '@/lib/queryClient';
