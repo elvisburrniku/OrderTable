@@ -1,76 +1,27 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth.tsx";
-import DashboardSidebar from "@/components/dashboard-sidebar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import UnifiedBookingModal from "@/components/unified-booking-modal";
-import { Label } from "@/components/ui/label";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Calendar,
-  Clock,
-  Plus,
-  Search,
-  Filter,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
-  Users,
-  Phone,
-  Mail,
-  MapPin,
-  User,
-  Download,
-  List,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  Send,
-  Bell,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
-// import { InternationalPhoneInput } from "@/components/international-phone-input";
-import { motion } from "framer-motion";
-import { useScrollToTop } from "@/hooks/use-scroll-to-top";
-import { format } from "date-fns";
-import { useSettings } from "@/hooks/use-settings";
-import { formatTime, formatDateTime, formatDate } from "@/lib/time-formatter";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Calendar, Users, Clock, Mail, Phone, Filter, Plus, Edit, Trash2, Eye, MoreHorizontal, CalendarDays, Search, RefreshCw } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { format, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
+import { useLocation } from 'wouter';
+import { toast } from '@/hooks/use-toast';
+import { useSettings } from '@/hooks/use-settings';
+import { formatDate, formatTime } from '@/lib/time-formatter';
+import { apiRequest } from '@/lib/queryClient';
+import { BookingSkeleton } from '@/components/skeletons/booking-skeleton';
+import { Pagination } from '@/components/ui/pagination';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
@@ -88,7 +39,7 @@ export default function Bookings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [viewMode, setViewMode<"list" | "calendar">("list");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -121,6 +72,8 @@ export default function Bookings() {
   const [reminderType, setReminderType] = useState<"payment" | "booking">(
     "payment",
   );
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // Fetch restaurant data
   const { data: restaurantData } = useQuery({
@@ -129,9 +82,14 @@ export default function Bookings() {
   });
 
   // Fetch bookings
-  const { data: bookings, isLoading } = useQuery({
+  const { data: bookings = [], isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`],
     enabled: !!tenantId && !!restaurantId,
+    refetchInterval: autoRefresh ? 30000 : false, // Auto-refresh every 30 seconds when enabled
+    refetchIntervalInBackground: true,
+    onSuccess: () => {
+      setLastRefresh(new Date());
+    }
   });
 
   // Fetch tables
@@ -242,6 +200,24 @@ export default function Bookings() {
   const formatTimeHelper = (timeString: string | null | undefined) => {
     if (!timeString) return "-";
     return timeString.substring(0, 5); // Extract HH:MM from HH:MM:SS
+  };
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    try {
+      await refetch();
+      setLastRefresh(new Date());
+      toast({
+        title: "Refreshed",
+        description: "Bookings data has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh bookings data.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Create booking mutation
@@ -892,7 +868,7 @@ export default function Bookings() {
                                 <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
                                   Source: {sourceFilter}
                                 </span>
-                              )}
+)}
                               {paymentFilter !== "all" && (
                                 <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-xs font-medium">
                                   Payment: {paymentFilter}
