@@ -6527,18 +6527,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const { PaymentTokenService } = await import('./payment-token-service.js');
             
             // Create secure payment token
-            const paymentData = {
-              bookingId: booking.id,
-              tenantId: tenantId,
-              restaurantId: restaurantId,
-              amount: paymentAmount,
-              currency: currency,
-              deadline: new Date(Date.now() + paymentDeadlineHours * 60 * 60 * 1000)
-            };
-            
-            const token = PaymentTokenService.createPaymentToken(paymentData);
             const baseUrl = req.get('origin') || `http://localhost:5000`;
-            paymentLink = `${baseUrl}/prepayment?token=${encodeURIComponent(token)}`;
+            paymentLink = PaymentTokenService.generateSecurePaymentUrl(
+              booking.id,
+              tenantId,
+              restaurantId,
+              parseFloat(paymentAmount),
+              currency,
+              baseUrl
+            );
             
             console.log(`Generated payment link for booking ${booking.id}: ${paymentLink}`);
           } catch (tokenError) {
@@ -19008,11 +19005,17 @@ NEXT STEPS:
             amount: booking.paymentAmount,
             currency: booking.currency || 'EUR'
           };
-          const token = PaymentTokenService.createPaymentToken(tokenData);
           const baseUrl = process.env.REPLIT_DEV_DOMAIN 
             ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
             : `https://${req.get('host')}`;
-          paymentUrl = PaymentTokenService.generateSecurePaymentUrl(token, baseUrl);
+          paymentUrl = PaymentTokenService.generateSecurePaymentUrl(
+            booking.id,
+            parseInt(tenantId),
+            parseInt(restaurantId),
+            booking.paymentAmount,
+            booking.currency || 'EUR',
+            baseUrl
+          );
         } catch (tokenError) {
           console.log('Token service failed, falling back to hash-based URL:', tokenError);
           // Fallback to hash-based URL

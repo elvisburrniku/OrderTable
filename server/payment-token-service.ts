@@ -87,6 +87,18 @@ export class PaymentTokenService {
   }
 
   /**
+   * Create payment token (alias for generateToken for backward compatibility)
+   * @param tokenData - Payment token data
+   * @returns Encrypted token string
+   */
+  static createPaymentToken(tokenData: Omit<PaymentTokenData, 'expiresAt'>): string {
+    return this.generateToken({
+      ...tokenData,
+      expiresAt: 0 // Will be set in generateToken
+    });
+  }
+
+  /**
    * Generate secure payment URL with encrypted token
    * @param bookingId - The booking ID
    * @param tenantId - The tenant ID
