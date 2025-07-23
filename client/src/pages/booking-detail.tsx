@@ -35,6 +35,8 @@ import {
   User,
   Hash,
   CreditCard,
+  Bell,
+  Send,
 } from "lucide-react";
 import { StandardLoading } from "@/components/standard-loading";
 import PaymentInvoice from "@/components/PaymentInvoice";
@@ -51,6 +53,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -60,6 +68,8 @@ export default function BookingDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isResendingPaymentLink, setIsResendingPaymentLink] = useState(false);
+  const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
+  const [reminderType, setReminderType] = useState<"payment" | "booking">("booking");
   const [editData, setEditData] = useState({
     customerName: "",
     customerEmail: "",
@@ -254,6 +264,40 @@ export default function BookingDetail() {
     },
   });
 
+  // Send reminder mutation
+  const sendReminderMutation = useMutation({
+    mutationFn: async ({
+      type,
+    }: {
+      type: "payment" | "booking";
+    }) => {
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${id}/send-reminder`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type }),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to send reminder");
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      setIsReminderDialogOpen(false);
+      toast({
+        title: "Reminder sent successfully",
+        description: `${variables.type === "payment" ? "Payment" : "Booking"} reminder has been sent to the customer.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to send reminder",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!user || !restaurant) {
     return <StandardLoading message="Please log in to view booking details" />;
   }
@@ -310,6 +354,23 @@ export default function BookingDetail() {
   const handleDelete = () => {
     setIsDeleteDialogOpen(false);
     deleteMutation.mutate();
+  };
+
+  // Handle reminder actions
+  const handleSendPaymentReminder = () => {
+    setReminderType("payment");
+    setIsReminderDialogOpen(true);
+  };
+
+  const handleSendBookingReminder = () => {
+    setReminderType("booking");
+    setIsReminderDialogOpen(true);
+  };
+
+  const confirmSendReminder = () => {
+    sendReminderMutation.mutate({
+      type: reminderType,
+    });
   };
 
   const handleResendPaymentLink = async () => {
@@ -947,6 +1008,28 @@ export default function BookingDetail() {
                         )}
                       </Button>
                     )}
+                    
+                    {/* Reminder Buttons */}
+                    {booking.requiresPayment && booking.paymentStatus !== "paid" && (
+                      <Button
+                        onClick={handleSendPaymentReminder}
+                        variant="outline"
+                        className="text-orange-600 border-orange-300 hover:bg-orange-50 hover:border-orange-400 px-6 py-2.5 font-medium"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Send Payment Reminder
+                      </Button>
+                    )}
+                    
+                    <Button
+                      onClick={handleSendBookingReminder}
+                      variant="outline"
+                      className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 px-6 py-2.5 font-medium"
+                    >
+                      <Bell className="w-4 h-4 mr-2" />
+                      Send Booking Reminder
+                    </Button>
+                    
                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                       <AlertDialogTrigger asChild>
                         <Button
@@ -1150,6 +1233,63 @@ export default function BookingDetail() {
           </Card>
         )}
       </div>
+
+      {/* Reminder Confirmation Dialog */}
+      <Dialog
+        open={isReminderDialogOpen}
+        onOpenChange={setIsReminderDialogOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Send {reminderType === "payment" ? "Payment" : "Booking"} Reminder
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600">
+              Send a {reminderType === "payment" ? "payment" : "booking"} reminder to{" "}
+              <strong>{booking?.customerName}</strong> for the booking on{" "}
+              <strong>
+                {booking ? new Date(booking.bookingDate).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) : ""}
+              </strong>{" "}
+              at <strong>{booking?.startTime}</strong>?
+            </p>
+            {reminderType === "payment" && (
+              <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm text-orange-800">
+                  <strong>Payment Amount:</strong> ${typeof booking?.paymentAmount === 'number' ? booking.paymentAmount.toFixed(2) : '0.00'}
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsReminderDialogOpen(false)}
+              disabled={sendReminderMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmSendReminder}
+              disabled={sendReminderMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {sendReminderMutation.isPending
+                ? "Sending..."
+                : `Send ${reminderType === "payment" ? "Payment" : "Booking"} Reminder`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

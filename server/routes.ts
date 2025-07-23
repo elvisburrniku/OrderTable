@@ -19027,14 +19027,25 @@ NEXT STEPS:
       }
 
       // Send SMS reminder if phone number is available
-      if (booking.customerPhone && smsService) {
+      if (booking.customerPhone) {
         try {
-          const message = type === 'payment' 
-            ? `Hi ${booking.customerName}, this is a reminder about your pending payment of €${booking.paymentAmount} for your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()}.`
-            : `Hi ${booking.customerName}, this is a reminder about your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()} at ${booking.startTime} for ${booking.guestCount} guests.`;
+          const { twilioSMSService } = await import("./twilio-sms-service.js");
           
-          await smsService.sendSMS(booking.customerPhone, message, parseInt(tenantId), parseInt(restaurantId));
-          smsSent = true;
+          if (twilioSMSService.isConfigured()) {
+            const message = type === 'payment' 
+              ? `Hi ${booking.customerName}, this is a reminder about your pending payment of €${booking.paymentAmount} for your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()}.`
+              : `Hi ${booking.customerName}, this is a reminder about your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()} at ${booking.startTime} for ${booking.guestCount} guests.`;
+            
+            const smsData = {
+              to: booking.customerPhone,
+              body: message,
+              tenantId: parseInt(tenantId),
+              restaurantId: parseInt(restaurantId)
+            };
+            
+            await twilioSMSService.sendSMS(smsData);
+            smsSent = true;
+          }
         } catch (smsError) {
           console.error('SMS reminder error:', smsError);
         }

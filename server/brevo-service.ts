@@ -747,17 +747,149 @@ export class BrevoEmailService {
     }
   }
 
-  async sendBookingReminder(
-    customerEmail: string,
-    customerName: string,
-    bookingDetails: any,
-    hoursBeforeVisit: number,
-  ) {
-    if (!(await this.checkEnabled())) return;
+
+
+  async sendPaymentReminder(reminderData: any) {
+    if (!(await this.checkEnabled())) return false;
 
     const sendSmtpEmail = new SendSmtpEmail();
 
-    sendSmtpEmail.subject = `Reminder: Your reservation is in ${hoursBeforeVisit} hours`;
+    sendSmtpEmail.subject = `Payment Reminder for Your Reservation at ${reminderData.restaurantName}`;
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="background-color: #ffc107; padding: 30px 30px 20px; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #212529; letter-spacing: -0.5px;">Payment Reminder</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${reminderData.customerName},</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                This is a friendly reminder that your payment for the following reservation is still pending:
+              </p>
+
+              <!-- Booking Details Card -->
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Reservation Details</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Restaurant:</span>
+                    <span style="color: #333; font-weight: 600;">${reminderData.restaurantName}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Date:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date(reminderData.bookingDate).toLocaleDateString()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Time:</span>
+                    <span style="color: #333; font-weight: 600;">${reminderData.startTime}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Party Size:</span>
+                    <span style="color: #333; font-weight: 600;">${reminderData.guestCount} guests</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #666; font-weight: 500;">Amount Due:</span>
+                    <span style="color: #dc3545; font-weight: 600; font-size: 18px;">€${reminderData.paymentAmount}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment Status Card -->
+              <div style="background-color: #fff3cd; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #856404; font-weight: 600;">⚠️ Payment Required</h3>
+                <p style="margin: 0; color: #856404; line-height: 1.6;">
+                  Please complete your payment to secure your reservation. You can pay online using our secure payment system.
+                </p>
+              </div>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="#" style="background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 16px;">
+                  Complete Payment Now
+                </a>
+              </div>
+
+              <p style="margin: 30px 0 20px; font-size: 16px; color: #666; line-height: 1.6;">
+                If you have any questions about your payment or need assistance, please don't hesitate to contact us.
+              </p>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${reminderData.restaurantName}</p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e5e5e5;">
+              <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.5; text-align: center;">
+                This is an automated payment reminder for your reservation.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    sendSmtpEmail.sender = {
+      name: reminderData.restaurantName || "Restaurant System",
+      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com",
+    };
+
+    sendSmtpEmail.to = [
+      {
+        email: reminderData.customerEmail,
+        name: reminderData.customerName,
+      },
+    ];
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log("Payment reminder email sent:", result);
+      return result;
+    } catch (error) {
+      console.error("Error sending payment reminder email:", error);
+      return false;
+    }
+  }
+
+  // Overloaded method to support old signature
+  async sendBookingReminder(
+    customerEmailOrData: string | any,
+    customerName?: string,
+    bookingDetails?: any,
+    hoursBeforeVisit?: number,
+  ) {
+    if (!(await this.checkEnabled())) return false;
+
+    // Handle both old signature and new object-based signature
+    let reminderData;
+    if (typeof customerEmailOrData === 'object') {
+      // New signature - called with reminderData object
+      reminderData = customerEmailOrData;
+    } else {
+      // Old signature - called with individual parameters
+      reminderData = {
+        customerEmail: customerEmailOrData,
+        customerName,
+        restaurantName: bookingDetails?.restaurantName,
+        bookingDate: bookingDetails?.bookingDate,
+        startTime: bookingDetails?.startTime,
+        guestCount: bookingDetails?.guestCount,
+      };
+      hoursBeforeVisit = hoursBeforeVisit || 2; // Default to 2 hours
+    }
+
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    sendSmtpEmail.subject = `Reminder: Your reservation at ${reminderData.restaurantName}`;
     sendSmtpEmail.htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -775,10 +907,10 @@ export class BrevoEmailService {
 
             <!-- Content -->
             <div style="padding: 30px;">
-              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${customerName},</p>
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${reminderData.customerName},</p>
 
               <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
-                This is a friendly reminder about your upcoming reservation in ${hoursBeforeVisit} hours:
+                This is a friendly reminder about your upcoming reservation:
               </p>
 
               <!-- Booking Details Card -->
@@ -786,20 +918,20 @@ export class BrevoEmailService {
                 <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Reservation Details</h3>
                 <div style="display: grid; gap: 10px;">
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Restaurant:</span>
+                    <span style="color: #333; font-weight: 600;">${reminderData.restaurantName}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Date:</span>
-                    <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                    <span style="color: #333; font-weight: 600;">${new Date(reminderData.bookingDate).toLocaleDateString()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Time:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
-                    <span style="color: #666; font-weight: 500;">Party Size:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
+                    <span style="color: #333; font-weight: 600;">${reminderData.startTime}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                    <span style="color: #666; font-weight: 500;">Table:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.tableNumber || "To be assigned"}</span>
+                    <span style="color: #666; font-weight: 500;">Party Size:</span>
+                    <span style="color: #333; font-weight: 600;">${reminderData.guestCount} guests</span>
                   </div>
                 </div>
               </div>
@@ -809,7 +941,7 @@ export class BrevoEmailService {
               </p>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "The Restaurant Team"}</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${reminderData.restaurantName}</p>
             </div>
 
             <!-- Footer -->
@@ -824,14 +956,14 @@ export class BrevoEmailService {
     `;
 
     sendSmtpEmail.sender = {
-      name: bookingDetails.restaurantName || "Restaurant Booking System",
+      name: reminderData.restaurantName || "Restaurant System",
       email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com",
     };
 
     sendSmtpEmail.to = [
       {
-        email: customerEmail,
-        name: customerName,
+        email: reminderData.customerEmail,
+        name: reminderData.customerName,
       },
     ];
 
