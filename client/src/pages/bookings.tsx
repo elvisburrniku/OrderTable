@@ -39,7 +39,7 @@ export default function Bookings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
-  const [viewMode, setViewMode<"list" | "calendar">("list");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
