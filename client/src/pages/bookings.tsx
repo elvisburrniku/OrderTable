@@ -94,9 +94,11 @@ export default function Bookings() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(7);
-  const [sortConfig, setSortConfig] = useState<Array<{field: string, direction: 'asc' | 'desc'}>>([
-    { field: 'bookingDate', direction: 'desc' },
-    { field: 'startTime', direction: 'desc' }
+  const [sortConfig, setSortConfig] = useState<
+    Array<{ field: string; direction: "asc" | "desc" }>
+  >([
+    { field: "bookingDate", direction: "desc" },
+    { field: "startTime", direction: "desc" },
   ]);
   const [newBooking, setNewBooking] = useState({
     customerName: "",
@@ -116,7 +118,9 @@ export default function Bookings() {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   const [reminderBooking, setReminderBooking] = useState<any>(null);
-  const [reminderType, setReminderType] = useState<'payment' | 'booking'>('payment');
+  const [reminderType, setReminderType] = useState<"payment" | "booking">(
+    "payment",
+  );
 
   // Fetch restaurant data
   const { data: restaurantData } = useQuery({
@@ -138,25 +142,30 @@ export default function Bookings() {
 
   // Multi-header sorting function
   const handleSort = (field: string) => {
-    setSortConfig(prevConfig => {
-      const existingIndex = prevConfig.findIndex(item => item.field === field);
-      
+    setSortConfig((prevConfig) => {
+      const existingIndex = prevConfig.findIndex(
+        (item) => item.field === field,
+      );
+
       if (existingIndex >= 0) {
         // Field already exists, toggle direction or remove if desc
         const existingItem = prevConfig[existingIndex];
-        if (existingItem.direction === 'asc') {
+        if (existingItem.direction === "asc") {
           // Change to desc
           return [
-            { field, direction: 'desc' as const },
-            ...prevConfig.filter(item => item.field !== field)
+            { field, direction: "desc" as const },
+            ...prevConfig.filter((item) => item.field !== field),
           ];
         } else {
           // Remove from sorting
-          return prevConfig.filter(item => item.field !== field);
+          return prevConfig.filter((item) => item.field !== field);
         }
       } else {
         // Add new field with asc direction at the beginning
-        return [{ field, direction: 'asc' as const }, ...prevConfig.slice(0, 2)]; // Keep max 3 sort fields
+        return [
+          { field, direction: "asc" as const },
+          ...prevConfig.slice(0, 2),
+        ]; // Keep max 3 sort fields
       }
     });
   };
@@ -166,24 +175,24 @@ export default function Bookings() {
     for (const sortItem of sortConfig) {
       let aValue = a[sortItem.field];
       let bValue = b[sortItem.field];
-      
+
       // Handle date/time fields
-      if (sortItem.field === 'bookingDate') {
+      if (sortItem.field === "bookingDate") {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
-      } else if (sortItem.field === 'startTime') {
-        aValue = aValue || '';
-        bValue = bValue || '';
-      } else if (typeof aValue === 'string') {
+      } else if (sortItem.field === "startTime") {
+        aValue = aValue || "";
+        bValue = bValue || "";
+      } else if (typeof aValue === "string") {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
-      
+
       if (aValue < bValue) {
-        return sortItem.direction === 'asc' ? -1 : 1;
+        return sortItem.direction === "asc" ? -1 : 1;
       }
       if (aValue > bValue) {
-        return sortItem.direction === 'asc' ? 1 : -1;
+        return sortItem.direction === "asc" ? 1 : -1;
       }
     }
     return 0;
@@ -200,11 +209,14 @@ export default function Bookings() {
       statusFilter === "all" || booking.status === statusFilter;
     const matchesSource =
       sourceFilter === "all" || booking.source === sourceFilter;
-    
+
     // Payment filter logic
-    const matchesPayment = paymentFilter === "all" || 
+    const matchesPayment =
+      paymentFilter === "all" ||
       (paymentFilter === "paid" && booking.paymentStatus === "paid") ||
-      (paymentFilter === "unpaid" && booking.requiresPayment && booking.paymentStatus !== "paid") ||
+      (paymentFilter === "unpaid" &&
+        booking.requiresPayment &&
+        booking.paymentStatus !== "paid") ||
       (paymentFilter === "no_payment" && !booking.requiresPayment);
 
     return matchesSearch && matchesStatus && matchesSource && matchesPayment;
@@ -347,7 +359,13 @@ export default function Bookings() {
 
   // Send reminder mutation
   const sendReminderMutation = useMutation({
-    mutationFn: async ({ bookingId, type }: { bookingId: number, type: 'payment' | 'booking' }) => {
+    mutationFn: async ({
+      bookingId,
+      type,
+    }: {
+      bookingId: number;
+      type: "payment" | "booking";
+    }) => {
       const response = await fetch(
         `/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/${bookingId}/send-reminder`,
         {
@@ -364,7 +382,7 @@ export default function Bookings() {
       setReminderBooking(null);
       toast({
         title: "Reminder sent successfully",
-        description: `${variables.type === 'payment' ? 'Payment' : 'Booking'} reminder has been sent to the customer.`,
+        description: `${variables.type === "payment" ? "Payment" : "Booking"} reminder has been sent to the customer.`,
       });
     },
     onError: (error: any) => {
@@ -479,10 +497,10 @@ export default function Bookings() {
     }
   };
 
-  const handleEditBooking = (booking: any) => {
-    setEditingBooking(booking);
-    setIsEditDialogOpen(true);
-  };
+  // const handleEditBooking = (booking: any) => {
+  //   setEditingBooking(booking);
+  //   setIsEditDialogOpen(true);
+  // };
 
   const getStatusBadge = (status: string) => {
     const colors = {
@@ -532,14 +550,14 @@ export default function Bookings() {
       return null;
     }
 
-    if (booking.paymentStatus === 'paid') {
+    if (booking.paymentStatus === "paid") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-100 flex items-center gap-1">
           <CheckCircle className="h-3 w-3" />
           Paid
         </Badge>
       );
-    } else if (booking.paymentStatus === 'failed') {
+    } else if (booking.paymentStatus === "failed") {
       return (
         <Badge className="bg-red-100 text-red-800 hover:bg-red-100 flex items-center gap-1">
           <XCircle className="h-3 w-3" />
@@ -558,33 +576,35 @@ export default function Bookings() {
 
   // Get sort indicator
   const getSortIndicator = (field: string) => {
-    const sortItem = sortConfig.find(item => item.field === field);
+    const sortItem = sortConfig.find((item) => item.field === field);
     if (!sortItem) {
       return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
     }
-    return sortItem.direction === 'asc' 
-      ? <ArrowUp className="h-4 w-4 text-blue-600" />
-      : <ArrowDown className="h-4 w-4 text-blue-600" />;
+    return sortItem.direction === "asc" ? (
+      <ArrowUp className="h-4 w-4 text-blue-600" />
+    ) : (
+      <ArrowDown className="h-4 w-4 text-blue-600" />
+    );
   };
 
   // Handle reminder actions
   const handleSendPaymentReminder = (booking: any) => {
     setReminderBooking(booking);
-    setReminderType('payment');
+    setReminderType("payment");
     setIsReminderDialogOpen(true);
   };
 
   const handleSendBookingReminder = (booking: any) => {
     setReminderBooking(booking);
-    setReminderType('booking');
+    setReminderType("booking");
     setIsReminderDialogOpen(true);
   };
 
   const confirmSendReminder = () => {
     if (reminderBooking) {
-      sendReminderMutation.mutate({ 
-        bookingId: reminderBooking.id, 
-        type: reminderType 
+      sendReminderMutation.mutate({
+        bookingId: reminderBooking.id,
+        type: reminderType,
       });
     }
   };
@@ -827,13 +847,19 @@ export default function Bookings() {
                                     <span>Paid</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="unpaid" className="rounded-md">
+                                <SelectItem
+                                  value="unpaid"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <AlertCircle className="w-3 h-3 text-orange-500" />
                                     <span>Unpaid</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="no_payment" className="rounded-md">
+                                <SelectItem
+                                  value="no_payment"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                                     <span>No Payment Required</span>
@@ -906,70 +932,70 @@ export default function Bookings() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th 
+                      <th
                         className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => handleSort('tenantBookingId')}
+                        onClick={() => handleSort("tenantBookingId")}
                       >
                         <div className="flex items-center gap-1">
                           Booking ID
-                          {getSortIndicator('tenantBookingId')}
+                          {getSortIndicator("tenantBookingId")}
                         </div>
                       </th>
-                      <th 
+                      <th
                         className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => handleSort('customerName')}
+                        onClick={() => handleSort("customerName")}
                       >
                         <div className="flex items-center gap-1">
                           Customer
-                          {getSortIndicator('customerName')}
+                          {getSortIndicator("customerName")}
                         </div>
                       </th>
-                      <th 
+                      <th
                         className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => handleSort('bookingDate')}
+                        onClick={() => handleSort("bookingDate")}
                       >
                         <div className="flex items-center gap-1">
                           Date & Time
-                          {getSortIndicator('bookingDate')}
+                          {getSortIndicator("bookingDate")}
                         </div>
                       </th>
-                      <th 
+                      <th
                         className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => handleSort('guestCount')}
+                        onClick={() => handleSort("guestCount")}
                       >
                         <div className="flex items-center gap-1">
                           Party Size
-                          {getSortIndicator('guestCount')}
+                          {getSortIndicator("guestCount")}
                         </div>
                       </th>
-                      <th 
+                      <th
                         className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => handleSort('status')}
+                        onClick={() => handleSort("status")}
                       >
                         <div className="flex items-center gap-1">
                           Status
-                          {getSortIndicator('status')}
+                          {getSortIndicator("status")}
                         </div>
                       </th>
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Payment
                       </th>
-                      <th 
+                      <th
                         className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => handleSort('createdAt')}
+                        onClick={() => handleSort("createdAt")}
                       >
                         <div className="flex items-center gap-1">
                           Created
-                          {getSortIndicator('createdAt')}
+                          {getSortIndicator("createdAt")}
                         </div>
                       </th>
-                      <th 
+                      <th
                         className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => handleSort('source')}
+                        onClick={() => handleSort("source")}
                       >
                         <div className="flex items-center gap-1">
                           Source
-                          {getSortIndicator('source')}
+                          {getSortIndicator("source")}
                         </div>
                       </th>
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1137,25 +1163,39 @@ export default function Bookings() {
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-48"
+                                >
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditBooking(booking)}
+                                  >
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit Booking
                                   </DropdownMenuItem>
-                                  {booking.requiresPayment && booking.paymentStatus !== 'paid' && (
-                                    <DropdownMenuItem onClick={() => handleSendPaymentReminder(booking)}>
-                                      <CreditCard className="mr-2 h-4 w-4" />
-                                      Send Payment Reminder
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem onClick={() => handleSendBookingReminder(booking)}>
+                                  {booking.requiresPayment &&
+                                    booking.paymentStatus !== "paid" && (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleSendPaymentReminder(booking)
+                                        }
+                                      >
+                                        <CreditCard className="mr-2 h-4 w-4" />
+                                        Send Payment Reminder
+                                      </DropdownMenuItem>
+                                    )}
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleSendBookingReminder(booking)
+                                    }
+                                  >
                                     <Bell className="mr-2 h-4 w-4" />
                                     Send Booking Reminder
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     onClick={() => handleDeleteBooking(booking)}
                                     className="text-red-600 focus:text-red-600"
                                   >
@@ -1537,17 +1577,21 @@ export default function Bookings() {
       />
 
       {/* Reminder Dialog */}
-      <Dialog open={isReminderDialogOpen} onOpenChange={setIsReminderDialogOpen}>
+      <Dialog
+        open={isReminderDialogOpen}
+        onOpenChange={setIsReminderDialogOpen}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Send {reminderType === 'payment' ? 'Payment' : 'Booking'} Reminder
+              Send {reminderType === "payment" ? "Payment" : "Booking"} Reminder
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-600">
-              Send a {reminderType === 'payment' ? 'payment' : 'booking'} reminder to{" "}
-              <strong>{reminderBooking?.customerName}</strong> for the booking on{" "}
+              Send a {reminderType === "payment" ? "payment" : "booking"}{" "}
+              reminder to <strong>{reminderBooking?.customerName}</strong> for
+              the booking on{" "}
               <strong>
                 {reminderBooking ? formatDate(reminderBooking.bookingDate) : ""}
               </strong>{" "}
@@ -1559,7 +1603,7 @@ export default function Bookings() {
               </strong>
               ?
             </p>
-            {reminderType === 'payment' && reminderBooking?.paymentAmount && (
+            {reminderType === "payment" && reminderBooking?.paymentAmount && (
               <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
                 <div className="flex items-center gap-2 text-orange-800">
                   <CreditCard className="h-4 w-4" />
@@ -1568,12 +1612,13 @@ export default function Bookings() {
                   </span>
                 </div>
                 <p className="text-sm text-orange-700 mt-1">
-                  Status: {reminderBooking.paymentStatus || 'pending'}
+                  Status: {reminderBooking.paymentStatus || "pending"}
                 </p>
               </div>
             )}
             <p className="text-sm text-gray-500 mt-3">
-              The reminder will be sent via email{reminderBooking?.customerPhone ? ' and SMS' : ''}.
+              The reminder will be sent via email
+              {reminderBooking?.customerPhone ? " and SMS" : ""}.
             </p>
           </div>
           <div className="flex justify-end space-x-2">
@@ -1593,7 +1638,7 @@ export default function Bookings() {
               <Send className="mr-2 h-4 w-4" />
               {sendReminderMutation.isPending
                 ? "Sending..."
-                : `Send ${reminderType === 'payment' ? 'Payment' : 'Booking'} Reminder`}
+                : `Send ${reminderType === "payment" ? "Payment" : "Booking"} Reminder`}
             </Button>
           </div>
         </DialogContent>
