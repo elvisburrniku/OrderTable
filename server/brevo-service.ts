@@ -753,31 +753,78 @@ export class BrevoEmailService {
     bookingDetails: any,
     hoursBeforeVisit: number,
   ) {
-    if (!this.checkEnabled()) return;
+    if (!(await this.checkEnabled())) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
 
     sendSmtpEmail.subject = `Reminder: Your reservation is in ${hoursBeforeVisit} hours`;
     sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
       <html>
-        <body>
-          <h2>Booking Reminder</h2>
-          <p>Dear ${customerName},</p>
-          <p>This is a friendly reminder about your upcoming reservation:</p>
-          <ul>
-            <li><strong>Date:</strong> ${new Date(bookingDetails.bookingDate).toLocaleDateString()}</li>
-            <li><strong>Time:</strong> ${bookingDetails.startTime}</li>
-            <li><strong>Party Size:</strong> ${bookingDetails.guestCount} guests</li>
-            <li><strong>Table:</strong> ${bookingDetails.tableNumber || "To be assigned"}</li>
-          </ul>
-          <p>We're excited to see you soon!</p>
-          <p>Best regards,<br>The Restaurant Team</p>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="background-color: #007bff; padding: 30px 30px 20px; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: white; letter-spacing: -0.5px;">Booking Reminder</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${customerName},</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                This is a friendly reminder about your upcoming reservation in ${hoursBeforeVisit} hours:
+              </p>
+
+              <!-- Booking Details Card -->
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #007bff;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Reservation Details</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Date:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Time:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Party Size:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #666; font-weight: 500;">Table:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.tableNumber || "To be assigned"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <p style="margin: 30px 0 20px; font-size: 16px; color: #666; line-height: 1.6;">
+                We're excited to see you soon! If you need to make any changes to your reservation, please contact us as soon as possible.
+              </p>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "The Restaurant Team"}</p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e5e5e5;">
+              <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.5; text-align: center;">
+                This is an automated reminder for your upcoming reservation.
+              </p>
+            </div>
+          </div>
         </body>
       </html>
     `;
 
     sendSmtpEmail.sender = {
-      name: "Restaurant Booking System",
+      name: bookingDetails.restaurantName || "Restaurant Booking System",
       email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com",
     };
 
