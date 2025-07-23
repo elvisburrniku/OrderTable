@@ -452,16 +452,28 @@ export class MemoryStorage implements IStorage {
   }
 
   async getBookingsByRestaurant(restaurantId: number): Promise<Booking[]> {
-    return this.bookings.filter((b) => b.restaurantId === restaurantId);
+    return this.bookings
+      .filter((b) => b.restaurantId === restaurantId)
+      .sort((a, b) => {
+        // Sort by booking date first (newest first), then by start time (latest first)
+        const dateComparison = new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime();
+        if (dateComparison !== 0) return dateComparison;
+        
+        // If same date, sort by start time (latest first)
+        return b.startTime.localeCompare(a.startTime);
+      });
   }
 
   async getBookingsByDate(
     restaurantId: number,
     date: string,
   ): Promise<Booking[]> {
-    return this.bookings.filter(
-      (b) => b.restaurantId === restaurantId && b.bookingDate === date,
-    );
+    return this.bookings
+      .filter((b) => b.restaurantId === restaurantId && b.bookingDate === date)
+      .sort((a, b) => {
+        // Sort by start time (latest first)
+        return b.startTime.localeCompare(a.startTime);
+      });
   }
 
   async createBooking(booking: InsertBooking): Promise<Booking> {

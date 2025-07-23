@@ -682,7 +682,8 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db
       .select()
       .from(bookings)
-      .where(eq(bookings.restaurantId, restaurantId));
+      .where(eq(bookings.restaurantId, restaurantId))
+      .orderBy(desc(bookings.bookingDate), desc(bookings.startTime));
     return result;
   }
   async getBookingsByDate(restaurantId: number, date: string): Promise<any[]> {
@@ -696,7 +697,8 @@ export class DatabaseStorage implements IStorage {
           eq(bookings.restaurantId, restaurantId),
           sql`DATE(${bookings.bookingDate}) = ${date}`,
         ),
-      );
+      )
+      .orderBy(desc(bookings.startTime));
     return result;
   }
   async createBooking(booking: any): Promise<any> {
