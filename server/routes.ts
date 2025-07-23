@@ -18975,6 +18975,85 @@ NEXT STEPS:
     },
   );
 
+  // Send reminder endpoint (both payment and booking reminders)
+  app.post('/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/send-reminder', async (req, res) => {
+    try {
+      const { tenantId, restaurantId, bookingId } = req.params;
+      const { type } = req.body; // 'payment' or 'booking'
+
+      if (!['payment', 'booking'].includes(type)) {
+        return res.status(400).json({ error: 'Invalid reminder type. Must be "payment" or "booking"' });
+      }
+
+      const booking = await storage.getBookingById(parseInt(bookingId));
+      if (!booking) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+
+      const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+      if (!restaurant) {
+        return res.status(404).json({ error: 'Restaurant not found' });
+      }
+
+      // Prepare reminder data
+      const reminderData = {
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail,
+        customerPhone: booking.customerPhone,
+        restaurantName: restaurant.name,
+        bookingDate: booking.bookingDate,
+        startTime: booking.startTime,
+        guestCount: booking.guestCount,
+        paymentAmount: booking.paymentAmount,
+        paymentStatus: booking.paymentStatus,
+        type
+      };
+
+      let emailSent = false;
+      let smsSent = false;
+
+      // Send email reminder
+      if (booking.customerEmail && emailService) {
+        try {
+          if (type === 'payment') {
+            await emailService.sendPaymentReminder(reminderData);
+          } else {
+            await emailService.sendBookingReminder(reminderData);
+          }
+          emailSent = true;
+        } catch (emailError) {
+          console.error('Email reminder error:', emailError);
+        }
+      }
+
+      // Send SMS reminder if phone number is available
+      if (booking.customerPhone && smsService) {
+        try {
+          const message = type === 'payment' 
+            ? `Hi ${booking.customerName}, this is a reminder about your pending payment of €${booking.paymentAmount} for your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()}.`
+            : `Hi ${booking.customerName}, this is a reminder about your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()} at ${booking.startTime} for ${booking.guestCount} guests.`;
+          
+          await smsService.sendSMS(booking.customerPhone, message, parseInt(tenantId), parseInt(restaurantId));
+          smsSent = true;
+        } catch (smsError) {
+          console.error('SMS reminder error:', smsError);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: `${type === 'payment' ? 'Payment' : 'Booking'} reminder sent successfully`,
+        sentTo: {
+          email: emailSent,
+          sms: smsSent
+        }
+      });
+    } catch (error) {
+      console.error('Send reminder error:', error);
+      res.status(500).json({ error: 'Failed to send reminder' });
+    }
+  });
+
   // Survey Response routes
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/survey-responses",
