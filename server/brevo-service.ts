@@ -814,7 +814,7 @@ export class BrevoEmailService {
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="#" style="background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 16px;">
+                <a href="${reminderData.paymentUrl || '#'}" style="background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 16px;">
                   Complete Payment Now
                 </a>
               </div>
@@ -822,6 +822,17 @@ export class BrevoEmailService {
               <p style="margin: 30px 0 20px; font-size: 16px; color: #666; line-height: 1.6;">
                 If you have any questions about your payment or need assistance, please don't hesitate to contact us.
               </p>
+
+              ${reminderData.paymentUrl ? `
+              <!-- Plain Text Payment Link -->
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #17a2b8;">
+                <h4 style="margin: 0 0 10px; font-size: 16px; color: #333; font-weight: 600;">🔗 Payment Link</h4>
+                <p style="margin: 0 0 10px; font-size: 14px; color: #666;">You can also copy and paste this link into your browser:</p>
+                <p style="margin: 0; font-size: 12px; color: #007bff; word-break: break-all; font-family: monospace; background-color: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6;">
+                  ${reminderData.paymentUrl}
+                </p>
+              </div>
+              ` : ''}
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
               <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${reminderData.restaurantName}</p>
@@ -858,6 +869,45 @@ export class BrevoEmailService {
       console.error("Error sending payment reminder email:", error);
       return false;
     }
+  }
+
+  /**
+   * Generate ICS calendar attachment for booking
+   */
+  private generateICSCalendar(reminderData: any): string {
+    const startDate = new Date(`${reminderData.bookingDate}T${reminderData.startTime}`);
+    const endDate = new Date(startDate.getTime() + (2 * 60 * 60 * 1000)); // Assume 2 hours duration
+    
+    // Format dates to ICS format (YYYYMMDDTHHMMSSZ)
+    const formatICSDate = (date: Date) => {
+      return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    };
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Restaurant Booking System//Event//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:REQUEST',
+      'BEGIN:VEVENT',
+      `UID:booking-${Date.now()}@restaurant.com`,
+      `DTSTART:${formatICSDate(startDate)}`,
+      `DTEND:${formatICSDate(endDate)}`,
+      `SUMMARY:Dinner at ${reminderData.restaurantName}`,
+      `DESCRIPTION:Restaurant reservation for ${reminderData.guestCount} guests at ${reminderData.restaurantName}`,
+      `LOCATION:${reminderData.restaurantName}`,
+      'STATUS:CONFIRMED',
+      'SEQUENCE:0',
+      'BEGIN:VALARM',
+      'TRIGGER:-PT15M',
+      'DESCRIPTION:Reminder: Dinner reservation in 15 minutes',
+      'ACTION:DISPLAY',
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    return icsContent;
   }
 
   // Overloaded method to support old signature
@@ -936,6 +986,15 @@ export class BrevoEmailService {
                 </div>
               </div>
 
+              <!-- Calendar Notice -->
+              <div style="background-color: #e7f3ff; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #007bff;">
+                <h4 style="margin: 0 0 10px; font-size: 16px; color: #333; font-weight: 600;">📅 Add to Your Calendar</h4>
+                <p style="margin: 0; font-size: 14px; color: #666; line-height: 1.6;">
+                  We've attached a calendar file (.ics) to this email so you can easily add this reservation to your calendar. 
+                  Simply open the attachment or click on it to add the event to your calendar app.
+                </p>
+              </div>
+
               <p style="margin: 30px 0 20px; font-size: 16px; color: #666; line-height: 1.6;">
                 We're excited to see you soon! If you need to make any changes to your reservation, please contact us as soon as possible.
               </p>
@@ -966,6 +1025,24 @@ export class BrevoEmailService {
         name: reminderData.customerName,
       },
     ];
+
+    // Add ICS calendar attachment for booking reminders
+    try {
+      const icsContent = this.generateICSCalendar(reminderData);
+      const icsBuffer = Buffer.from(icsContent, 'utf8');
+      const icsBase64 = icsBuffer.toString('base64');
+      
+      sendSmtpEmail.attachment = [
+        {
+          content: icsBase64,
+          name: `reservation-${reminderData.restaurantName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.ics`,
+          type: 'text/calendar'
+        }
+      ];
+    } catch (icsError) {
+      console.log("Could not generate ICS attachment:", icsError);
+      // Continue without attachment if ICS generation fails
+    }
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);

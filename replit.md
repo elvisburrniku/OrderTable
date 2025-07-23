@@ -36,6 +36,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Frontend Components**: Implemented comprehensive reminder dialog with booking details display, payment amount visualization, and confirmation system with toast notifications
 - **Error Handling**: Added proper error handling and loading states for reminder operations with user feedback via toast notifications
 - **User Experience**: Restaurant staff can now send payment reminders to customers with outstanding payments and booking reminders for upcoming reservations from both the bookings list and individual booking detail views
+- **2025-07-23**: ✅ PAYMENT LINK AND CALENDAR ENHANCEMENT COMPLETED - Fixed payment reminder links and added ICS calendar attachments to booking reminders
+- **Payment Link Fix**: Updated payment reminder emails to include working payment buttons with secure URLs generated via PaymentTokenService or BookingHash fallback system
+- **Plain Text Payment Links**: Added dedicated payment link section at bottom of payment reminder emails for easy copy-paste access
+- **ICS Calendar Integration**: Implemented automatic calendar file (.ics) attachments for booking reminders enabling customers to add reservations directly to their calendars
+- **SMS Enhancement**: Added payment URLs to SMS payment reminders for direct mobile payment access
+- **Calendar Features**: ICS files include reservation details, 15-minute reminder alarms, and proper calendar event structure for seamless integration with calendar applications
+- **Email Template Enhancement**: Added visual calendar notice in booking reminders explaining ICS attachment functionality and user benefits
 - **2025-07-23**: ✅ MIGRATION FROM REPLIT AGENT TO REPLIT ENVIRONMENT COMPLETED - Successfully migrated restaurant booking management system with booking time ordering enhancement
 - **Booking Ordering Enhancement**: Implemented chronological ordering for all booking endpoints - bookings now display with newest dates first, and latest times first within the same date
 - **Storage Layer Updates**: Enhanced both DatabaseStorage and MemoryStorage implementations to automatically sort bookings by booking date (descending) and start time (descending)

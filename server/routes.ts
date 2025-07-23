@@ -18995,6 +18995,42 @@ NEXT STEPS:
         return res.status(404).json({ error: 'Restaurant not found' });
       }
 
+      // Generate payment URL for payment reminders
+      let paymentUrl = null;
+      if (type === 'payment' && booking.requiresPayment && booking.paymentAmount) {
+        try {
+          // Try using the secure token service first
+          const { PaymentTokenService } = await import("./payment-token-service.js");
+          const tokenData = {
+            bookingId: booking.id,
+            tenantId: parseInt(tenantId),
+            restaurantId: parseInt(restaurantId),
+            amount: booking.paymentAmount,
+            currency: booking.currency || 'EUR'
+          };
+          const token = PaymentTokenService.createPaymentToken(tokenData);
+          const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+            : `https://${req.get('host')}`;
+          paymentUrl = PaymentTokenService.generateSecurePaymentUrl(token, baseUrl);
+        } catch (tokenError) {
+          console.log('Token service failed, falling back to hash-based URL:', tokenError);
+          // Fallback to hash-based URL
+          const { BookingHash } = await import('./booking-hash.js');
+          const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+            : `https://${req.get('host')}`;
+          paymentUrl = BookingHash.generatePaymentUrl(
+            booking.id, 
+            parseInt(tenantId), 
+            parseInt(restaurantId), 
+            booking.paymentAmount, 
+            booking.currency || 'EUR', 
+            baseUrl
+          );
+        }
+      }
+
       // Prepare reminder data
       const reminderData = {
         customerName: booking.customerName,
@@ -19006,6 +19042,7 @@ NEXT STEPS:
         guestCount: booking.guestCount,
         paymentAmount: booking.paymentAmount,
         paymentStatus: booking.paymentStatus,
+        paymentUrl: paymentUrl,
         type
       };
 
@@ -19033,7 +19070,7 @@ NEXT STEPS:
           
           if (twilioSMSService.isConfigured()) {
             const message = type === 'payment' 
-              ? `Hi ${booking.customerName}, this is a reminder about your pending payment of €${booking.paymentAmount} for your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()}.`
+              ? `Hi ${booking.customerName}, this is a reminder about your pending payment of €${booking.paymentAmount} for your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()}. Pay here: ${paymentUrl || 'Contact restaurant for payment link'}`
               : `Hi ${booking.customerName}, this is a reminder about your booking at ${restaurant.name} on ${new Date(booking.bookingDate).toLocaleDateString()} at ${booking.startTime} for ${booking.guestCount} guests.`;
             
             const smsData = {
