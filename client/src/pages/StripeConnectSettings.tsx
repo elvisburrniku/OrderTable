@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, CheckCircle, CreditCard, ExternalLink, RefreshCw, TrendingUp, Users, Calendar, DollarSign, BarChart3, Activity } from "lucide-react";
+import { AlertCircle, CheckCircle, CreditCard, ExternalLink, RefreshCw, TrendingUp, Users, Calendar, DollarSign, BarChart3, Activity, Receipt, Clock, Banknote, XCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
@@ -147,9 +147,9 @@ export default function StripeConnectSettings() {
     enabled: !!tenantId && connectStatus?.connected,
   });
 
-  // Fetch payment statistics
-  const { data: statistics, isLoading: statsLoading } = useQuery({
-    queryKey: ["stripe-payment-statistics", tenantId, dateRange],
+  // Fetch payment statistics with real-time updates
+  const { data: statistics, isLoading: statsLoading, refetch: refetchStats } = useQuery({
+    queryKey: ["stripe-payment-statistics", tenantId, dateRange, restaurant?.id],
     queryFn: async () => {
       if (!tenantId) return null;
       const { startDate, endDate } = getDateRange();
@@ -160,7 +160,8 @@ export default function StripeConnectSettings() {
       return response.json() as Promise<PaymentStatistics>;
     },
     enabled: !!tenantId && connectStatus?.connected,
-    staleTime: 60000, // 1 minute
+    staleTime: 30000, // 30 seconds for more real-time data
+    refetchInterval: 60000, // Auto-refresh every minute
   });
 
   // Start Stripe Connect onboarding
@@ -433,18 +434,21 @@ export default function StripeConnectSettings() {
               </div>
             ) : statistics && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                        <p className="text-2xl font-bold">{formatCurrency(statistics.totalRevenue)}</p>
+                        <p className="text-sm font-medium text-green-700">Total Revenue</p>
+                        <p className="text-2xl font-bold text-green-800">{formatCurrency(statistics.totalRevenue)}</p>
                       </div>
                       <DollarSign className="h-8 w-8 text-green-600" />
                     </div>
-                    <div className="mt-2">
-                      <p className="text-xs text-muted-foreground">
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-green-600">
                         Net: {formatCurrency(statistics.netRevenue)} after fees
+                      </p>
+                      <p className="text-xs text-green-500">
+                        Conversion: {statistics.conversionRate?.toFixed(1)}%
                       </p>
                     </div>
                   </CardContent>
@@ -480,18 +484,21 @@ export default function StripeConnectSettings() {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Account Balance</p>
-                        <p className="text-2xl font-bold">{formatCurrency(statistics.accountBalance.available)}</p>
+                        <p className="text-sm font-medium text-orange-700">Account Balance</p>
+                        <p className="text-2xl font-bold text-orange-800">{formatCurrency(statistics.accountBalance.available)}</p>
                       </div>
                       <CreditCard className="h-8 w-8 text-orange-600" />
                     </div>
-                    <div className="mt-2">
-                      <p className="text-xs text-muted-foreground">
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-orange-600">
                         Pending: {formatCurrency(statistics.accountBalance.pending)}
+                      </p>
+                      <p className="text-xs text-orange-500">
+                        {statistics.accountBalance.currency}
                       </p>
                     </div>
                   </CardContent>
@@ -499,10 +506,11 @@ export default function StripeConnectSettings() {
               </div>
             )}
 
-            {/* Detailed Statistics Tabs */}
+            {/* Enhanced Statistics Tabs */}
             <Tabs defaultValue="overview" className="space-y-4">
-              <TabsList>
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="payments">Recent Payments</TabsTrigger>
                 <TabsTrigger value="customers">Top Customers</TabsTrigger>
                 <TabsTrigger value="payouts">Payouts</TabsTrigger>
@@ -511,17 +519,42 @@ export default function StripeConnectSettings() {
               <TabsContent value="overview">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Payment Overview</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      Payment Overview
+                    </CardTitle>
                     <CardDescription>
-                      Detailed breakdown of your payment statistics
+                      Detailed breakdown of your payment statistics with real-time data
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {statistics && (
                       <div className="space-y-6">
+                        {/* Enhanced Key Metrics */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h4 className="text-sm font-medium text-blue-700 mb-1">Platform Fees</h4>
+                            <p className="text-lg font-bold text-blue-800">{formatCurrency(statistics.totalApplicationFees || 0)}</p>
+                            <p className="text-xs text-blue-600">From successful payments</p>
+                          </div>
+                          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                            <h4 className="text-sm font-medium text-purple-700 mb-1">Processing Fees</h4>
+                            <p className="text-lg font-bold text-purple-800">{formatCurrency(statistics.totalFees)}</p>
+                            <p className="text-xs text-purple-600">Stripe processing fees</p>
+                          </div>
+                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">Success Rate</h4>
+                            <p className="text-lg font-bold text-gray-800">{statistics.conversionRate?.toFixed(1)}%</p>
+                            <p className="text-xs text-gray-600">{statistics.successfulPayments} of {statistics.totalPayments} payments</p>
+                          </div>
+                        </div>
+
                         {/* Payment Status Breakdown */}
                         <div>
-                          <h4 className="text-sm font-medium mb-3">Payment Status Distribution</h4>
+                          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4" />
+                            Payment Status Distribution
+                          </h4>
                           <div className="space-y-2">
                             {Object.entries(statistics.paymentsByStatus).map(([status, count]) => (
                               <div key={status} className="flex items-center justify-between">
@@ -591,53 +624,72 @@ export default function StripeConnectSettings() {
                       <div className="text-center py-8 text-muted-foreground">
                         No payments yet. Start accepting payments from your customers!
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-5 gap-4 p-3 text-sm font-medium text-muted-foreground border-b">
-                          <div>Amount</div>
-                          <div>Customer</div>
-                          <div>Status</div>
-                          <div>Payment Intent</div>
-                          <div>Date</div>
-                        </div>
-                        
-                        {payments.slice(0, 10).map((payment) => (
-                          <div
-                            key={payment.id}
-                            className="grid grid-cols-5 gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="font-medium">
-                              {formatCurrency(payment.amount / 100, payment.currency)}
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-sm font-medium">
-                                {payment.customerName || 'Anonymous'}
+                    ) : statistics?.recentPayments?.length ? (
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {statistics.recentPayments.map((payment: any) => (
+                          <div key={payment.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge 
+                                  variant={payment.status === 'succeeded' ? 'default' : 
+                                          payment.status === 'failed' ? 'destructive' : 'secondary'}
+                                >
+                                  {payment.status}
+                                </Badge>
+                                <span className="font-medium">{formatCurrency(payment.amount)}</span>
+                                <span className="text-sm text-muted-foreground">{payment.currency}</span>
                               </div>
-                              {payment.customerEmail && (
-                                <div className="text-xs text-muted-foreground">
-                                  {payment.customerEmail}
-                                </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium">
+                                  {payment.customerName || payment.customerEmail || 'Guest'}
+                                </p>
+                                {payment.bookingId && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Booking #{payment.bookingId} • Restaurant #{payment.restaurantId}
+                                  </p>
+                                )}
+                                {payment.paymentMethod && (
+                                  <p className="text-xs text-blue-600">
+                                    {payment.brand?.toUpperCase()} •••• {payment.last4}
+                                  </p>
+                                )}
+                                {payment.applicationFeeAmount > 0 && (
+                                  <p className="text-xs text-purple-600">
+                                    Platform fee: {formatCurrency(payment.applicationFeeAmount)}
+                                  </p>
+                                )}
+                                {payment.stripeProcessingFee > 0 && (
+                                  <p className="text-xs text-gray-600">
+                                    Processing fee: {formatCurrency(payment.stripeProcessingFee)}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">
+                                {format(new Date(payment.created), "MMM d, yyyy")}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(payment.created), "h:mm a")}
+                              </p>
+                              {payment.receiptUrl && (
+                                <a 
+                                  href={payment.receiptUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-600 hover:text-blue-800"
+                                >
+                                  View Receipt
+                                </a>
                               )}
-                            </div>
-                            <div>
-                              <Badge 
-                                variant={
-                                  payment.status === "succeeded" ? "default" : 
-                                  payment.status === "processing" ? "secondary" : 
-                                  "destructive"
-                                }
-                              >
-                                {payment.status}
-                              </Badge>
-                            </div>
-                            <div className="font-mono text-xs text-muted-foreground">
-                              {payment.stripePaymentIntentId.substring(0, 15)}...
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {new Date(payment.createdAt).toLocaleDateString()}
                             </div>
                           </div>
                         ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-muted-foreground">No payments found for the selected period</p>
                       </div>
                     )}
                   </CardContent>
@@ -685,52 +737,89 @@ export default function StripeConnectSettings() {
               <TabsContent value="payouts">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Payouts</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Banknote className="h-5 w-5" />
+                      Payouts & Transfers
+                    </CardTitle>
                     <CardDescription>
-                      Your recent payout history
+                      Your recent payout history and transfer details
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {statistics && statistics.payouts && statistics.payouts.length > 0 ? (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-4 gap-4 p-3 text-sm font-medium text-muted-foreground border-b">
-                          <div>Amount</div>
-                          <div>Status</div>
-                          <div>Arrival Date</div>
-                          <div>Created</div>
+                    {statistics?.payoutSummary ? (
+                      <div className="space-y-6">
+                        {/* Payout Summary */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h4 className="text-sm font-medium text-green-700 mb-1">Total Payouts</h4>
+                            <p className="text-lg font-bold text-green-800">{formatCurrency(statistics.payoutSummary.totalPayoutAmount)}</p>
+                            <p className="text-xs text-green-600">{statistics.payoutSummary.totalPayouts} transfers</p>
+                          </div>
+                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h4 className="text-sm font-medium text-blue-700 mb-1">Completed</h4>
+                            <p className="text-lg font-bold text-blue-800">{statistics.payoutSummary.completedPayouts}</p>
+                            <p className="text-xs text-blue-600">Successful transfers</p>
+                          </div>
+                          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                            <h4 className="text-sm font-medium text-yellow-700 mb-1">Pending</h4>
+                            <p className="text-lg font-bold text-yellow-800">{statistics.payoutSummary.pendingPayouts}</p>
+                            <p className="text-xs text-yellow-600">In progress</p>
+                          </div>
+                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">Available Balance</h4>
+                            <p className="text-lg font-bold text-gray-800">{formatCurrency(statistics.accountBalance.available)}</p>
+                            <p className="text-xs text-gray-600">Ready for payout</p>
+                          </div>
                         </div>
-                        
-                        {statistics.payouts.map((payout) => (
-                          <div
-                            key={payout.id}
-                            className="grid grid-cols-4 gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="font-medium">
-                              {formatCurrency(payout.amount, payout.currency)}
-                            </div>
-                            <div>
-                              <Badge 
-                                variant={
-                                  payout.status === "paid" ? "default" : 
-                                  payout.status === "pending" ? "secondary" : 
-                                  "outline"
-                                }
-                              >
-                                {payout.status}
-                              </Badge>
-                            </div>
-                            <div className="text-sm">
-                              {new Date(payout.arrivalDate).toLocaleDateString()}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {new Date(payout.created).toLocaleDateString()}
+
+                        {/* Recent Payouts */}
+                        {statistics.payoutSummary.recentPayouts && statistics.payoutSummary.recentPayouts.length > 0 ? (
+                          <div>
+                            <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              Recent Payouts
+                            </h4>
+                            <div className="space-y-3">
+                              {statistics.payoutSummary.recentPayouts.map((payout: any) => (
+                                <div key={payout.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-3">
+                                    <Badge 
+                                      variant={
+                                        payout.status === "paid" ? "default" : 
+                                        payout.status === "pending" ? "secondary" : 
+                                        "outline"
+                                      }
+                                    >
+                                      {payout.status}
+                                    </Badge>
+                                    <div>
+                                      <p className="font-medium">{formatCurrency(payout.amount)}</p>
+                                      <p className="text-sm text-muted-foreground">{payout.currency}</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-medium">
+                                      {format(new Date(payout.arrivalDate), "MMM d, yyyy")}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Created: {format(new Date(payout.created), "MMM d")}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        ))}
+                        ) : (
+                          <div className="text-center py-8">
+                            <Banknote className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                            <p className="text-muted-foreground">No payouts available for the selected period</p>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No payouts available for the selected period
+                      <div className="text-center py-8">
+                        <Banknote className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-muted-foreground">No payout data available</p>
                       </div>
                     )}
                   </CardContent>

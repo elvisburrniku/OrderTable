@@ -64,14 +64,85 @@ function BookingPaymentForm({
     }).format(amount);
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
+  // Enhanced payment processing with better error handling and user feedback
+  const processPayment = async () => {
     if (!stripe || !elements) {
+      onError("Payment system not initialized. Please refresh the page.");
       return;
     }
 
     setIsProcessing(true);
+
+    try {
+      // First, submit the payment element to validate all inputs
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        throw new Error(submitError.message || "Payment validation failed");
+      }
+
+      // Confirm the payment with enhanced metadata and better error handling
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment-success?booking=${booking.id}&tenant=${booking.tenantId}&restaurant=${booking.restaurantId}`,
+          payment_method_data: {
+            billing_details: {
+              name: booking.customerName,
+              email: booking.customerEmail,
+              phone: booking.customerPhone,
+            },
+          },
+        },
+        redirect: "if_required",
+      });
+
+      if (confirmError) {
+        console.error("Payment confirmation error:", confirmError);
+        
+        // Enhanced error handling for different error types
+        if (confirmError.type === "card_error") {
+          if (confirmError.code === "card_declined") {
+            throw new Error("Your card was declined. Please check your card details or try a different payment method.");
+          } else if (confirmError.code === "expired_card") {
+            throw new Error("Your card has expired. Please use a different payment method.");
+          } else if (confirmError.code === "insufficient_funds") {
+            throw new Error("Insufficient funds. Please try a different payment method.");
+          } else if (confirmError.code === "incorrect_cvc") {
+            throw new Error("The security code (CVC) you entered is incorrect. Please try again.");
+          } else {
+            throw new Error(confirmError.message || "Your card could not be processed. Please check your details and try again.");
+          }
+        } else if (confirmError.type === "validation_error") {
+          throw new Error("Please check your payment details and try again.");
+        } else if (confirmError.code === "payment_intent_authentication_failure") {
+          throw new Error("Payment authentication failed. Your card may require additional verification from your bank.");
+        } else {
+          throw new Error(confirmError.message || "Payment failed. Please try again.");
+        }
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        console.log("Payment successful, triggering success callback");
+        onSuccess();
+      } else if (paymentIntent?.status === "requires_action") {
+        // Handle 3D Secure or other authentication requirements
+        onError("Payment requires additional authentication. Please complete the verification step and try again.");
+      } else if (paymentIntent?.status === "processing") {
+        onError("Your payment is being processed. Please wait a moment and check your booking status.");
+      } else {
+        onError("Payment processing failed. Please try again or contact the restaurant for assistance.");
+      }
+    } catch (error: any) {
+      console.error("Payment processing error:", error);
+      onError(error.message || "Payment failed. Please try again or contact support for assistance.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await processPayment();
 
     try {
       // Construct return URL based on payment method (secure token or legacy hash)

@@ -21254,8 +21254,9 @@ NEXT STEPS:
             );
           }
 
-          // Calculate statistics
+          // Enhanced statistics with real-time data
           const statistics = {
+            // Core metrics
             totalPayments: filteredPayments.length,
             successfulPayments: filteredPayments.filter(pi => pi.status === 'succeeded').length,
             failedPayments: filteredPayments.filter(pi => pi.status === 'canceled' || pi.status === 'failed').length,
@@ -21267,21 +21268,47 @@ NEXT STEPS:
               .reduce((sum, bt) => sum + bt.fee, 0) / 100,
             netRevenue: 0, // Will calculate below
             averagePaymentAmount: 0, // Will calculate below
-            paymentsByDay: {} as Record<string, number>,
+            
+            // Enhanced analytics
+            totalApplicationFees: filteredPayments
+              .filter(pi => pi.status === 'succeeded' && pi.application_fee_amount)
+              .reduce((sum, pi) => sum + (pi.application_fee_amount || 0), 0) / 100,
+            conversionRate: filteredPayments.length > 0 
+              ? (filteredPayments.filter(pi => pi.status === 'succeeded').length / filteredPayments.length) * 100 
+              : 0,
+            disputeRate: 0, // Will calculate from charges
+            refundRate: 0, // Will calculate from refunds
+            
+            // Grouping and analytics
+            paymentsByDay: {} as Record<string, { revenue: number; count: number; fees: number }>,
             paymentsByStatus: {} as Record<string, number>,
+            paymentsByPaymentMethod: {} as Record<string, { count: number; amount: number }>,
             paymentsByCurrency: {} as Record<string, { count: number; amount: number }>,
             topCustomers: [] as any[],
             recentPayments: [] as any[],
             monthlyRevenue: {} as Record<string, number>,
+            
+            // Payout information
             payoutSummary: {
               totalPayouts: payouts.data.length,
               totalPayoutAmount: payouts.data.reduce((sum, p) => sum + p.amount, 0) / 100,
               pendingPayouts: payouts.data.filter(p => p.status === 'pending').length,
               completedPayouts: payouts.data.filter(p => p.status === 'paid').length,
+              recentPayouts: payouts.data.slice(0, 5).map(p => ({
+                id: p.id,
+                amount: p.amount / 100,
+                currency: p.currency.toUpperCase(),
+                status: p.status,
+                created: new Date(p.created * 1000).toISOString(),
+                arrivalDate: new Date(p.arrival_date * 1000).toISOString(),
+              })),
             },
+            
+            // Account balance
             accountBalance: {
               available: balance.available.reduce((sum, b) => sum + b.amount, 0) / 100,
               pending: balance.pending.reduce((sum, b) => sum + b.amount, 0) / 100,
+              currency: balance.available[0]?.currency?.toUpperCase() || 'EUR',
             },
           };
 
@@ -21291,14 +21318,33 @@ NEXT STEPS:
             ? statistics.totalRevenue / statistics.successfulPayments 
             : 0;
 
-          // Group payments by day
+          // Enhanced daily analytics
           filteredPayments.forEach(pi => {
             const date = new Date(pi.created * 1000).toISOString().split('T')[0];
             if (!statistics.paymentsByDay[date]) {
-              statistics.paymentsByDay[date] = 0;
+              statistics.paymentsByDay[date] = { revenue: 0, count: 0, fees: 0 };
             }
+            
+            statistics.paymentsByDay[date].count++;
             if (pi.status === 'succeeded') {
-              statistics.paymentsByDay[date] += pi.amount / 100;
+              statistics.paymentsByDay[date].revenue += pi.amount / 100;
+              // Add fees for this payment
+              const paymentFees = balanceTransactions.data
+                .filter(bt => bt.source === pi.charges?.data?.[0]?.id)
+                .reduce((sum, bt) => sum + bt.fee, 0) / 100;
+              statistics.paymentsByDay[date].fees += paymentFees;
+            }
+          });
+
+          // Payment method analytics
+          filteredPayments.forEach(pi => {
+            const paymentMethod = pi.charges?.data?.[0]?.payment_method_details?.type || 'unknown';
+            if (!statistics.paymentsByPaymentMethod[paymentMethod]) {
+              statistics.paymentsByPaymentMethod[paymentMethod] = { count: 0, amount: 0 };
+            }
+            statistics.paymentsByPaymentMethod[paymentMethod].count++;
+            if (pi.status === 'succeeded') {
+              statistics.paymentsByPaymentMethod[paymentMethod].amount += pi.amount / 100;
             }
           });
 
@@ -21335,8 +21381,8 @@ NEXT STEPS:
             .sort((a, b) => b.total - a.total)
             .slice(0, 10);
 
-          // Get recent payments with details
-          statistics.recentPayments = filteredPayments.slice(0, 10).map(pi => ({
+          // Get recent payments with comprehensive details
+          statistics.recentPayments = filteredPayments.slice(0, 25).map(pi => ({
             id: pi.id,
             amount: pi.amount / 100,
             currency: pi.currency.toUpperCase(),
@@ -21345,8 +21391,18 @@ NEXT STEPS:
             customerEmail: pi.receipt_email || pi.metadata?.customerEmail,
             customerName: pi.metadata?.customerName,
             bookingId: pi.metadata?.bookingId,
+            restaurantId: pi.metadata?.restaurantId,
             description: pi.description,
             receiptUrl: pi.charges?.data?.[0]?.receipt_url,
+            paymentMethod: pi.charges?.data?.[0]?.payment_method_details?.type || 'card',
+            last4: pi.charges?.data?.[0]?.payment_method_details?.card?.last4,
+            brand: pi.charges?.data?.[0]?.payment_method_details?.card?.brand,
+            applicationFeeAmount: pi.application_fee_amount ? pi.application_fee_amount / 100 : 0,
+            transferAmount: pi.amount_received ? pi.amount_received / 100 : 0,
+            stripeProcessingFee: balanceTransactions.data
+              .filter(bt => bt.source === pi.charges?.data?.[0]?.id)
+              .reduce((sum, bt) => sum + bt.fee, 0) / 100,
+            netAmount: (pi.amount_received - (pi.application_fee_amount || 0)) / 100,
           }));
 
           // Calculate monthly revenue

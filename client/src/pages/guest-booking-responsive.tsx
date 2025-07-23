@@ -74,26 +74,39 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
     event.preventDefault();
 
     if (!stripe || !elements) {
+      onPaymentError("Payment system not initialized. Please refresh the page.");
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      // First, try to confirm payment without redirect
+      // First, submit the payment element to validate inputs
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        throw new Error(submitError.message || "Payment validation failed");
+      }
+
+      // Enhanced payment confirmation with better metadata
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         redirect: 'if_required',
         confirmParams: {
-          // Return to guest booking page with payment status
-          return_url: `${window.location.origin}${window.location.pathname}?payment_status=success&payment_intent={PAYMENT_INTENT_ID}`,
+          return_url: `${window.location.origin}/payment-success?booking=${bookingData.id}&tenant=${bookingData.tenantId}&restaurant=${bookingData.restaurantId}`,
+          payment_method_data: {
+            billing_details: {
+              name: bookingData.customerName,
+              email: bookingData.customerEmail,
+              phone: bookingData.customerPhone,
+            },
+          },
         },
       });
 
       if (error) {
         console.error('Payment error:', error);
         
-        // Handle specific error types with user-friendly messages
+        // Enhanced error handling with specific user-friendly messages
         if (error.type === "card_error") {
           if (error.code === "card_declined") {
             onPaymentError("Your card was declined. Please check your card details or try a different payment method.");
@@ -101,29 +114,31 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
             onPaymentError("Your card has expired. Please use a different payment method.");
           } else if (error.code === "insufficient_funds") {
             onPaymentError("Insufficient funds. Please try a different payment method.");
+          } else if (error.code === "incorrect_cvc") {
+            onPaymentError("The security code (CVC) you entered is incorrect. Please try again.");
+          } else if (error.code === "incorrect_number") {
+            onPaymentError("The card number you entered is incorrect. Please check and try again.");
           } else {
             onPaymentError(error.message || "Your card could not be processed. Please check your details and try again.");
           }
         } else if (error.type === "validation_error") {
           onPaymentError("Please check your payment details and try again.");
         } else if (error.code === "payment_intent_authentication_failure") {
-          onPaymentError("Payment authentication failed. Your card may require additional verification.");
+          onPaymentError("Payment authentication failed. Your card may require additional verification from your bank.");
         } else if (error.code === "payment_method_unactivated") {
           onPaymentError("This payment method is not yet activated. Please contact your bank or try a different method.");
-        } else if (error.message?.includes("return_url")) {
-          // For payment methods that require return_url, show a specific message
-          onPaymentError("This payment method requires additional verification. Please contact the restaurant to complete your booking.");
+        } else if (error.code === "rate_limit") {
+          onPaymentError("Too many payment attempts. Please wait a moment and try again.");
         } else {
-          onPaymentError(error.message || "Payment failed. Please try again or contact support.");
+          onPaymentError(error.message || "Payment failed. Please try again or contact the restaurant for assistance.");
         }
       } else if (paymentIntent) {
-        // Check payment status
+        // Enhanced payment status handling
         if (paymentIntent.status === 'succeeded') {
-          console.log('Payment successful inline');
+          console.log('Payment successful - processing confirmation');
           onPaymentSuccess();
         } else if (paymentIntent.status === 'requires_action') {
-          // This shouldn't happen with redirect: 'if_required', but handle it
-          onPaymentError("Payment requires additional verification. Please try again.");
+          onPaymentError("Payment requires additional verification. Please complete the authentication step.");
         } else if (paymentIntent.status === 'processing') {
           // Payment is being processed - wait a moment and check status
           onPaymentError("Payment is being processed. Please wait a moment and refresh the page to check status.");
