@@ -38,6 +38,10 @@ import {
   ChevronDown,
   CheckCircle,
   AlertCircle,
+  ArrowUpDown,
+  XCircle,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import {
   DropdownMenu,
