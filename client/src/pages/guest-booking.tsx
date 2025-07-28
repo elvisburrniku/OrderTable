@@ -68,6 +68,17 @@ export default function GuestBooking() {
     enabled: !!restaurantId
   });
 
+  // Fetch booking configuration including duration settings
+  const { data: bookingConfig } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/booking-config`],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/booking-config`);
+      if (!response.ok) return { defaultBookingDuration: 120 };
+      return response.json();
+    },
+    enabled: !!restaurantId && !!tenantId
+  });
+
   // Fetch opening hours
   const { data: openingHours } = useQuery({
     queryKey: [`/api/restaurants/${restaurantId}/opening-hours/public`],
@@ -106,7 +117,7 @@ export default function GuestBooking() {
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      return apiRequest("POST", `/api/restaurants/${restaurantId}/bookings/public`, bookingData);
+      return apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/guest`, bookingData);
     },
     onSuccess: (data) => {
       toast({
@@ -214,6 +225,20 @@ export default function GuestBooking() {
     }
   };
 
+  // Calculate end time based on start time and duration from settings
+  const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const startDate = new Date();
+    startDate.setHours(hours, minutes, 0, 0);
+    
+    const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000);
+    
+    const endHours = endDate.getHours().toString().padStart(2, '0');
+    const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
+    
+    return `${endHours}:${endMinutes}`;
+  };
+
   const handleBookingSubmit = () => {
     if (!selectedDate || !selectedTime || !customerData.name || !customerData.email) {
       toast({
@@ -224,6 +249,10 @@ export default function GuestBooking() {
       return;
     }
 
+    // Calculate end time automatically based on duration setting
+    const durationMinutes = bookingConfig?.defaultBookingDuration || 120; // Default 2 hours
+    const endTime = calculateEndTime(selectedTime, durationMinutes);
+
     const bookingData = {
       customerName: customerData.name,
       customerEmail: customerData.email,
@@ -231,6 +260,7 @@ export default function GuestBooking() {
       guestCount,
       bookingDate: selectedDate.toISOString(),
       startTime: selectedTime,
+      endTime: endTime, // Auto-calculated based on duration setting
       notes: customerData.comment,
       source: "online"
     };
@@ -479,6 +509,19 @@ export default function GuestBooking() {
                   <span className="text-gray-600">Time:</span>
                   <span className="font-medium">{selectedTime}</span>
                 </div>
+                {selectedTime && bookingConfig && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Duration:</span>
+                    <span className="font-medium">
+                      {Math.floor(bookingConfig.defaultBookingDuration / 60)}h {bookingConfig.defaultBookingDuration % 60}m
+                      {selectedTime && (
+                        <span className="text-gray-500 text-sm ml-1">
+                          (until {calculateEndTime(selectedTime, bookingConfig.defaultBookingDuration)})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
                 <div className="pt-2 border-t">
                   <Badge variant="outline" className="bg-green-50 text-green-700">
                     Normal booking

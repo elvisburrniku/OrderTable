@@ -6484,6 +6484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           guestCount: req.body.guestCount,
           bookingDate: new Date(req.body.bookingDate),
           startTime: req.body.startTime,
+          endTime: req.body.endTime || null, // Support auto-calculated end time from frontend
           specialRequests: req.body.specialRequests || null,
           status: bookingStatus,
           source: req.body.source || "guest_booking",
