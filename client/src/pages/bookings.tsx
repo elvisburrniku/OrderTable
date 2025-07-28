@@ -35,6 +35,7 @@ import {
   CalendarDays,
   Search,
   RefreshCw,
+  ChevronDown,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -71,6 +72,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
