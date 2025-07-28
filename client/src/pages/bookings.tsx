@@ -84,6 +84,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import UnifiedBookingModal from "@/components/unified-booking-modal";
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
