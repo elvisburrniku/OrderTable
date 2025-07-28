@@ -42,6 +42,7 @@ import {
   XCircle,
   ArrowUp,
   ArrowDown,
+  Send,
 } from "lucide-react";
 import {
   DropdownMenu,
