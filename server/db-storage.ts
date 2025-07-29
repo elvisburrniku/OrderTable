@@ -1551,18 +1551,123 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
+      // Get notification settings
+      let notificationSettings = {
+        emailNotifications: true,
+        smsNotifications: false,
+        pushNotifications: true,
+        bookingReminders: true,
+        cancelationAlerts: true,
+        noShowAlerts: true,
+      };
+      
+      if (restaurant.notificationSettings) {
+        try {
+          const storedNotificationSettings = JSON.parse(restaurant.notificationSettings);
+          notificationSettings = { ...notificationSettings, ...storedNotificationSettings };
+        } catch (e) {
+          console.warn("Failed to parse stored notification settings, using defaults");
+        }
+      }
+
+      // Get kitchen settings
+      let kitchenSettings = {
+        tableService: true,
+        takeoutOrders: true,
+        deliveryService: false,
+        deliveryRadius: 5,
+        avgServiceTime: 90,
+        specialRequests: true,
+        noShowGrace: 15,
+        tableRelease: 30,
+      };
+      
+      if (restaurant.kitchenSettings) {
+        try {
+          const storedKitchenSettings = JSON.parse(restaurant.kitchenSettings);
+          kitchenSettings = { ...kitchenSettings, ...storedKitchenSettings };
+        } catch (e) {
+          console.warn("Failed to parse stored kitchen settings, using defaults");
+        }
+      }
+
+      // Get payment settings
+      let paymentSettings = {
+        creditCards: true,
+        cashPayments: true,
+        digitalPayments: true,
+        requireDeposit: true,
+        groupThreshold: 8,
+        cancellationPolicy: "24h",
+        refundPolicy: "full",
+        serviceFee: 0,
+        taxRate: 8.25,
+      };
+      
+      if (restaurant.paymentSettings) {
+        try {
+          const storedPaymentSettings = JSON.parse(restaurant.paymentSettings);
+          paymentSettings = { ...paymentSettings, ...storedPaymentSettings };
+        } catch (e) {
+          console.warn("Failed to parse stored payment settings, using defaults");
+        }
+      }
+
+      // Get customer settings
+      let customerSettings = {
+        loyaltyProgram: false,
+        birthdayRewards: false,
+        feedbackCollection: true,
+        googleReviews: false,
+        yelpIntegration: false,
+        tripAdvisor: false,
+        thankYouMessages: true,
+        specialEventInvitations: false,
+        newsletterSubscriptions: false,
+        avgResponseTime: "2h",
+      };
+      
+      if (restaurant.customerSettings) {
+        try {
+          const storedCustomerSettings = JSON.parse(restaurant.customerSettings);
+          customerSettings = { ...customerSettings, ...storedCustomerSettings };
+        } catch (e) {
+          console.warn("Failed to parse stored customer settings, using defaults");
+        }
+      }
+
+      // Get marketing settings
+      let marketingSettings = {
+        happyHour: false,
+        earlyBirdDiscounts: false,
+        groupDiscounts: false,
+        seasonalPromotions: true,
+        promoCode: "WELCOME10",
+        instagramIntegration: false,
+        facebookCheckins: false,
+        twitterUpdates: false,
+        hashtag: "#YourRestaurant",
+        socialHandle: "@yourrestaurant",
+      };
+      
+      if (restaurant.marketingSettings) {
+        try {
+          const storedMarketingSettings = JSON.parse(restaurant.marketingSettings);
+          marketingSettings = { ...marketingSettings, ...storedMarketingSettings };
+        } catch (e) {
+          console.warn("Failed to parse stored marketing settings, using defaults");
+        }
+      }
+
       return {
         emailSettings,
         generalSettings,
         bookingSettings,
-        notificationSettings: {
-          emailNotifications: true,
-          smsNotifications: false,
-          pushNotifications: true,
-          bookingReminders: true,
-          cancelationAlerts: true,
-          noShowAlerts: true,
-        },
+        notificationSettings,
+        kitchenSettings,
+        paymentSettings,
+        customerSettings,
+        marketingSettings,
         openingHours,
         cutOffTimes,
         specialPeriods,
@@ -1598,6 +1703,31 @@ export class DatabaseStorage implements IStorage {
       // Handle booking settings
       if (settings.bookingSettings) {
         updates.bookingSettings = JSON.stringify(settings.bookingSettings);
+      }
+
+      // Handle notification settings
+      if (settings.notificationSettings) {
+        updates.notificationSettings = JSON.stringify(settings.notificationSettings);
+      }
+
+      // Handle kitchen settings
+      if (settings.kitchenSettings) {
+        updates.kitchenSettings = JSON.stringify(settings.kitchenSettings);
+      }
+
+      // Handle payment settings
+      if (settings.paymentSettings) {
+        updates.paymentSettings = JSON.stringify(settings.paymentSettings);
+      }
+
+      // Handle customer settings
+      if (settings.customerSettings) {
+        updates.customerSettings = JSON.stringify(settings.customerSettings);
+      }
+
+      // Handle marketing settings
+      if (settings.marketingSettings) {
+        updates.marketingSettings = JSON.stringify(settings.marketingSettings);
       }
 
       // Update restaurant record if there are changes

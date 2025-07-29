@@ -176,6 +176,10 @@ export const restaurants = pgTable("restaurants", {
   generalSettings: text("general_settings"),
   bookingSettings: text("booking_settings"),
   notificationSettings: text("notification_settings"),
+  kitchenSettings: text("kitchen_settings"),
+  paymentSettings: text("payment_settings"),
+  customerSettings: text("customer_settings"),
+  marketingSettings: text("marketing_settings"),
 });
 
 export const tables = pgTable("tables", {
