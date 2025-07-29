@@ -57,6 +57,27 @@ export default function GuestBooking() {
     comment: ""
   });
 
+  // Extract settings with defaults
+  const bookingSettings = restaurantSettings?.bookingSettings || {};
+  const generalSettings = restaurantSettings?.generalSettings || {};
+  const emailSettings = restaurantSettings?.emailSettings || {};
+  
+  // Booking rules based on settings
+  const minGuests = bookingSettings.onlineBooking?.minGuests || 1;
+  const maxGuests = bookingSettings.onlineBooking?.maxGuests || 10;
+  const defaultDuration = bookingSettings.defaultDuration || bookingConfig?.defaultBookingDuration || 120;
+  const maxAdvanceDays = bookingSettings.maxAdvanceBookingDays || 30;
+  const minNoticeHours = bookingSettings.minBookingNotice || 2;
+  const contactMethod = bookingSettings.contactMethod || 'both';
+  const allowSameDayBookings = bookingSettings.allowSameDayBookings !== false;
+  const requireDeposit = bookingSettings.requireDeposit || false;
+  const depositAmount = bookingSettings.depositAmount || 0;
+  
+  // Date/time formatting based on settings
+  const dateFormat = generalSettings.dateFormat || 'MM/dd/yyyy';
+  const timeFormat = generalSettings.timeFormat || '12h';
+  const timeZone = generalSettings.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   // Fetch restaurant data
   const { data: restaurant, isLoading: restaurantLoading } = useQuery({
     queryKey: [`/api/restaurants/${restaurantId}/public`],
@@ -68,7 +89,18 @@ export default function GuestBooking() {
     enabled: !!restaurantId
   });
 
-  // Fetch booking configuration including duration settings
+  // Fetch complete restaurant settings including booking configuration
+  const { data: restaurantSettings } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/settings`],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/settings`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!restaurantId && !!tenantId
+  });
+
+  // Fetch booking configuration (legacy endpoint, will be replaced by settings)
   const { data: bookingConfig } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/booking-config`],
     queryFn: async () => {
@@ -240,18 +272,49 @@ export default function GuestBooking() {
   };
 
   const handleBookingSubmit = () => {
-    if (!selectedDate || !selectedTime || !customerData.name || !customerData.email) {
+    // Validate required fields based on contact method setting
+    const requiredFieldsValid = customerData.name && 
+      ((contactMethod === 'phone' && customerData.phone) ||
+       (contactMethod === 'email' && customerData.email) ||
+       (contactMethod === 'both' && customerData.email && customerData.phone) ||
+       (contactMethod === 'either' && (customerData.email || customerData.phone)));
+
+    if (!selectedDate || !selectedTime || !requiredFieldsValid) {
+      let missingFields = [];
+      if (!customerData.name) missingFields.push("Name");
+      if (contactMethod === 'phone' && !customerData.phone) missingFields.push("Phone");
+      if (contactMethod === 'email' && !customerData.email) missingFields.push("Email");
+      if (contactMethod === 'both' && (!customerData.email || !customerData.phone)) {
+        if (!customerData.email) missingFields.push("Email");
+        if (!customerData.phone) missingFields.push("Phone");
+      }
+      if (contactMethod === 'either' && !customerData.email && !customerData.phone) {
+        missingFields.push("Email or Phone");
+      }
+
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: `Please provide: ${missingFields.join(', ')}`,
         variant: "destructive",
       });
       return;
     }
 
-    // Calculate end time automatically based on duration setting
-    const durationMinutes = bookingConfig?.defaultBookingDuration || 120; // Default 2 hours
-    const endTime = calculateEndTime(selectedTime, durationMinutes);
+    // Validate booking time against minimum notice requirement
+    const bookingDateTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${selectedTime}:00`);
+    const now = new Date();
+    const hoursDifference = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursDifference < minNoticeHours) {
+      toast({
+        title: "Booking Too Soon",
+        description: `Bookings require at least ${minNoticeHours} hours advance notice.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const endTime = calculateEndTime(selectedTime, defaultDuration);
 
     const bookingData = {
       customerName: customerData.name,
@@ -260,9 +323,12 @@ export default function GuestBooking() {
       guestCount,
       bookingDate: selectedDate.toISOString(),
       startTime: selectedTime,
-      endTime: endTime, // Auto-calculated based on duration setting
+      endTime: endTime,
       notes: customerData.comment,
-      source: "online"
+      source: "online",
+      requiresPayment: requireDeposit,
+      paymentAmount: requireDeposit ? depositAmount : null,
+      paymentDeadlineHours: 24
     };
 
     createBookingMutation.mutate(bookingData);
@@ -363,30 +429,36 @@ export default function GuestBooking() {
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-8">How many guests?</h2>
+              <p className="text-gray-600 text-sm">
+                Bookings available for {minGuests} to {maxGuests} guests
+              </p>
             </div>
             <div className="grid grid-cols-5 gap-4 max-w-md mx-auto">
-              {[1, 2, 3, 4, 5].map((count) => (
+              {Array.from({ length: Math.min(5, maxGuests) }, (_, i) => i + minGuests).map((count) => (
                 <Button
                   key={count}
                   variant={guestCount === count ? "default" : "outline"}
                   className="h-16 text-lg"
                   onClick={() => setGuestCount(count)}
+                  disabled={count < minGuests || count > maxGuests}
                 >
                   {count}
                 </Button>
               ))}
             </div>
-            <div className="grid grid-cols-5 gap-4 max-w-md mx-auto">
-              {[6, 7, 8, 9, 10].map((count) => (
-                <Button
-                  key={count}
-                  variant={guestCount === count ? "default" : "outline"}
-                  className="h-16 text-lg"
-                  onClick={() => setGuestCount(count)}
-                >
-                  {count}
-                </Button>
-              ))}
+            {maxGuests > 5 && (
+              <div className="grid grid-cols-5 gap-4 max-w-md mx-auto">
+                {Array.from({ length: Math.min(5, maxGuests - 5) }, (_, i) => i + 6).map((count) => (
+                  <Button
+                    key={count}
+                    variant={guestCount === count ? "default" : "outline"}
+                    className="h-16 text-lg"
+                    onClick={() => setGuestCount(count)}
+                    disabled={count < minGuests || count > maxGuests}
+                  >
+                    {count}
+                  </Button>
+                ))}
             </div>
             <div className="text-center">
               <p className="text-sm text-gray-600">
@@ -509,16 +581,24 @@ export default function GuestBooking() {
                   <span className="text-gray-600">Time:</span>
                   <span className="font-medium">{selectedTime}</span>
                 </div>
-                {selectedTime && bookingConfig && (
+                {selectedTime && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Duration:</span>
                     <span className="font-medium">
-                      {Math.floor(bookingConfig.defaultBookingDuration / 60)}h {bookingConfig.defaultBookingDuration % 60}m
+                      {Math.floor(defaultDuration / 60)}h {defaultDuration % 60}m
                       {selectedTime && (
                         <span className="text-gray-500 text-sm ml-1">
-                          (until {calculateEndTime(selectedTime, bookingConfig.defaultBookingDuration)})
+                          (until {calculateEndTime(selectedTime, defaultDuration)})
                         </span>
                       )}
+                    </span>
+                  </div>
+                )}
+                {requireDeposit && depositAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Deposit Required:</span>
+                    <span className="font-medium text-red-600">
+                      {generalSettings.currency || 'EUR'} {depositAmount.toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -543,26 +623,40 @@ export default function GuestBooking() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="phone">Mobile</Label>
-                <InternationalPhoneInput
-                  value={customerData.phone}
-                  onChange={(phone) => setCustomerData(prev => ({ ...prev, phone }))}
-                  placeholder="Phone number"
-                />
-              </div>
+              {(contactMethod === 'phone' || contactMethod === 'both' || contactMethod === 'either') && (
+                <div>
+                  <Label htmlFor="phone">
+                    Phone {contactMethod === 'phone' || contactMethod === 'both' ? '*' : ''}
+                  </Label>
+                  <InternationalPhoneInput
+                    value={customerData.phone}
+                    onChange={(phone) => setCustomerData(prev => ({ ...prev, phone }))}
+                    placeholder="Phone number"
+                  />
+                </div>
+              )}
 
-              <div>
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={customerData.email}
-                  onChange={(e) => setCustomerData(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="your.email@example.com"
-                  required
-                />
-              </div>
+              {(contactMethod === 'email' || contactMethod === 'both' || contactMethod === 'either') && (
+                <div>
+                  <Label htmlFor="email">
+                    Email {contactMethod === 'email' || contactMethod === 'both' ? '*' : ''}
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={customerData.email}
+                    onChange={(e) => setCustomerData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="your.email@example.com"
+                    required={contactMethod === 'email' || contactMethod === 'both'}
+                  />
+                </div>
+              )}
+
+              {contactMethod === 'either' && (
+                <p className="text-sm text-gray-600">
+                  Please provide either email or phone number for booking confirmation.
+                </p>
+              )}
 
               <div>
                 <Label htmlFor="comment">Comment</Label>

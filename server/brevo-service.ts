@@ -214,7 +214,28 @@ export class BrevoEmailService {
     bookingDetails: any,
     restaurantDetails?: any,
   ) {
-    const subject = `Booking Confirmation - ${bookingDetails.restaurantName || "Restaurant"}`;
+    // Get restaurant settings for email customization
+    let settings = {};
+    let fromEmail = "noreply@booking.com";
+    let fromName = bookingDetails.restaurantName || "Restaurant";
+    
+    try {
+      const { SettingsIntegration } = await import('./settings-integration.js');
+      const settingsService = new SettingsIntegration();
+      settings = await settingsService.getRestaurantSettings(
+        bookingDetails.restaurantId || restaurantDetails?.id,
+        bookingDetails.tenantId
+      );
+      
+      // Use custom email settings if available
+      const emailSettings = (settings as any)?.emailSettings || {};
+      if (emailSettings.fromEmail) fromEmail = emailSettings.fromEmail;
+      if (emailSettings.fromName) fromName = emailSettings.fromName;
+    } catch (error) {
+      console.warn("Could not load restaurant settings for email:", error);
+    }
+
+    const subject = `Booking Confirmation - ${fromName}`;
 
     // Generate management and cancel URLs
     const baseUrl = process.env.BASE_URL || "http://localhost:5000";

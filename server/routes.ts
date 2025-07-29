@@ -6361,6 +6361,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
+        // Get restaurant settings for validation
+        const { SettingsIntegration } = await import('./settings-integration.js');
+        const settingsService = new SettingsIntegration();
+        const settings = await settingsService.getRestaurantSettings(restaurantId, tenantId);
+        
+        // Validate booking against settings
+        const bookingSettings = settings.bookingSettings || {};
+        const minGuests = bookingSettings.onlineBooking?.minGuests || 1;
+        const maxGuests = bookingSettings.onlineBooking?.maxGuests || 10;
+        const minNoticeHours = bookingSettings.minBookingNotice || 2;
+        const contactMethod = bookingSettings.contactMethod || 'both';
+        
+        // Validate guest count
+        if (req.body.guestCount < minGuests || req.body.guestCount > maxGuests) {
+          return res.status(400).json({ 
+            message: `Guest count must be between ${minGuests} and ${maxGuests}` 
+          });
+        }
+        
+        // Validate contact information based on settings
+        const hasEmail = req.body.customerEmail && req.body.customerEmail.trim() !== '';
+        const hasPhone = req.body.customerPhone && req.body.customerPhone.trim() !== '';
+        
+        if (contactMethod === 'email' && !hasEmail) {
+          return res.status(400).json({ message: "Email address is required" });
+        }
+        if (contactMethod === 'phone' && !hasPhone) {
+          return res.status(400).json({ message: "Phone number is required" });
+        }
+        if (contactMethod === 'both' && (!hasEmail || !hasPhone)) {
+          return res.status(400).json({ message: "Both email and phone are required" });
+        }
+        if (contactMethod === 'either' && !hasEmail && !hasPhone) {
+          return res.status(400).json({ message: "Either email or phone is required" });
+        }
+        
+        // Validate minimum notice period
+        const bookingDateTime = new Date(`${req.body.bookingDate.split('T')[0]}T${req.body.startTime}:00`);
+        const now = new Date();
+        const hoursDifference = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursDifference < minNoticeHours) {
+          return res.status(400).json({ 
+            message: `Bookings require at least ${minNoticeHours} hours advance notice` 
+          });
+        }
+
         // Check payment setups to determine if payment is required
         const paymentSetups = await storage.getPaymentSetupsByRestaurant(restaurantId);
         

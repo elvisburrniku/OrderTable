@@ -64,6 +64,27 @@ export default function InteractiveBookingCalendar({
   const [overrideDateAndTime, setOverrideDateAndTime] = useState<{date: Date, time: string} | null>(null);
   const [availabilityData, setAvailabilityData] = useState<Map<string, DayAvailability>>(new Map());
 
+  // Fetch restaurant settings for formatting and behavior
+  const { data: restaurantSettings } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/settings`],
+    queryFn: async () => {
+      if (!tenantId) return null;
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/settings`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!restaurantId && !!tenantId && !isPublic
+  });
+
+  // Extract settings with defaults
+  const generalSettings = restaurantSettings?.generalSettings || {};
+  const bookingSettings = restaurantSettings?.bookingSettings || {};
+  const dateFormat = generalSettings.dateFormat || 'MM/dd/yyyy';
+  const timeFormat = generalSettings.timeFormat || '12h';
+  const timeZone = generalSettings.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const maxAdvanceDays = bookingSettings.maxAdvanceBookingDays || 30;
+  const allowSameDayBookings = bookingSettings.allowSameDayBookings !== false;
+
   // Get calendar days for current month view
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
