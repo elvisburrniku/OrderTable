@@ -22,6 +22,10 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-29**: ✅ BOOKING SETTINGS DATA PERSISTENCE IMPLEMENTED - Successfully added comprehensive booking settings storage to database
+- **Database Enhancement**: Added booking_settings column to restaurants table for storing all booking configuration options
+- **Settings Storage**: Enhanced updateRestaurantSettings to handle bookingSettings, emailSettings, and generalSettings with proper JSON serialization
+- **Complete Settings Support**: All settings from the booking settings page now save properly including duration, contact methods, waiting list, table booking preferences, and online booking configuration
 - **2025-07-29**: ✅ SETTINGS DATA PERSISTENCE FIXED - Successfully resolved settings saving issue by fixing database constraints and removing duplicate API routes
 - **Database Fix**: Fixed activity_log table constraint error that was preventing settings from being saved to the database
 - **API Route Fix**: Removed duplicate PUT endpoint that was causing conflicts in the settings update functionality

@@ -1454,6 +1454,57 @@ export class DatabaseStorage implements IStorage {
       const emailSettings = restaurant.emailSettings
         ? JSON.parse(restaurant.emailSettings)
         : {};
+      
+      // Get stored booking settings or use defaults
+      let bookingSettings = {
+        duration: "2 hours",
+        emptySeats: "Test option - 2",
+        turnaroundTime: "Test option - 0 min.",
+        contactMethod: "phone",
+        allowCancellationAndChanges: "Yes",
+        cancellationNotice: "None",
+        enableWaitingList: true,
+        automateWaitingList: false,
+        waitingListOnlyNoTimes: false,
+        useEndingTime: false,
+        groupRequest: false,
+        tableBooking: "recommended",
+        personalDataStorage: "1year",
+        showCompanyNameField: {
+          manual: false,
+          online: false
+        },
+        showRoomNumberField: {
+          manual: false,
+          online: false
+        },
+        showAgreedPriceField: false,
+        showPromoCodeField: {
+          manual: false,
+          online: false
+        },
+        onlineBooking: {
+          bookingFlow: "guest_first",
+          interval: "15 min.",
+          maxBookingsPerTime: "unlimited",
+          displayFormat: "time_only",
+          guestCapacitySelection: "dropdown",
+          tableSelection: "disabled"
+        },
+        administration: {
+          newBookingNotification: false
+        }
+      };
+
+      if (restaurant.bookingSettings) {
+        try {
+          const storedBookingSettings = JSON.parse(restaurant.bookingSettings);
+          bookingSettings = { ...bookingSettings, ...storedBookingSettings };
+        } catch (e) {
+          console.warn("Failed to parse stored booking settings, using defaults");
+        }
+      }
+
       const openingHours = await this.getOpeningHoursByRestaurant(restaurantId);
       const cutOffTimes = await this.getCutOffTimesByRestaurant(restaurantId);
       const specialPeriods =
@@ -1485,7 +1536,7 @@ export class DatabaseStorage implements IStorage {
       return {
         emailSettings,
         generalSettings,
-        bookingSettings: {},
+        bookingSettings,
         notificationSettings: {
           emailNotifications: true,
           smsNotifications: false,
@@ -1524,6 +1575,11 @@ export class DatabaseStorage implements IStorage {
       // Handle general settings
       if (settings.generalSettings) {
         updates.generalSettings = JSON.stringify(settings.generalSettings);
+      }
+
+      // Handle booking settings
+      if (settings.bookingSettings) {
+        updates.bookingSettings = JSON.stringify(settings.bookingSettings);
       }
 
       // Update restaurant record if there are changes
