@@ -206,6 +206,55 @@ export default function Settings() {
     noShowAlerts: true,
   });
 
+  const [kitchenSettings, setKitchenSettings] = useState({
+    tableService: true,
+    takeoutOrders: true,
+    deliveryService: false,
+    deliveryRadius: 5,
+    avgServiceTime: 90,
+    specialRequests: true,
+    noShowGrace: 15,
+    tableRelease: 30,
+  });
+
+  const [paymentSettings, setPaymentSettings] = useState({
+    creditCards: true,
+    cashPayments: true,
+    digitalPayments: true,
+    requireDeposit: true,
+    groupThreshold: 8,
+    cancellationPolicy: "24h",
+    refundPolicy: "full",
+    serviceFee: 0,
+    taxRate: 8.25,
+  });
+
+  const [customerSettings, setCustomerSettings] = useState({
+    loyaltyProgram: false,
+    birthdayRewards: false,
+    feedbackCollection: true,
+    googleReviews: false,
+    yelpIntegration: false,
+    tripAdvisor: false,
+    thankYouMessages: true,
+    specialEventInvitations: false,
+    newsletterSubscriptions: false,
+    avgResponseTime: "2h",
+  });
+
+  const [marketingSettings, setMarketingSettings] = useState({
+    happyHour: false,
+    earlyBirdDiscounts: false,
+    groupDiscounts: false,
+    seasonalPromotions: true,
+    promoCode: "",
+    instagramIntegration: false,
+    facebookCheckins: false,
+    twitterUpdates: false,
+    hashtag: "",
+    socialHandle: "",
+  });
+
   // Load settings from backend
   const { data: settings, isLoading } = useQuery({
     queryKey: [
@@ -236,6 +285,30 @@ export default function Settings() {
         setNotificationSettings((prev) => ({
           ...prev,
           ...settings.notificationSettings,
+        }));
+      }
+      if (settings.kitchenSettings) {
+        setKitchenSettings((prev) => ({
+          ...prev,
+          ...settings.kitchenSettings,
+        }));
+      }
+      if (settings.paymentSettings) {
+        setPaymentSettings((prev) => ({
+          ...prev,
+          ...settings.paymentSettings,
+        }));
+      }
+      if (settings.customerSettings) {
+        setCustomerSettings((prev) => ({
+          ...prev,
+          ...settings.customerSettings,
+        }));
+      }
+      if (settings.marketingSettings) {
+        setMarketingSettings((prev) => ({
+          ...prev,
+          ...settings.marketingSettings,
         }));
       }
     }
@@ -279,6 +352,10 @@ export default function Settings() {
       generalSettings,
       bookingSettings,
       notificationSettings,
+      kitchenSettings,
+      paymentSettings,
+      customerSettings,
+      marketingSettings,
     });
   };
 
@@ -2181,7 +2258,15 @@ export default function Settings() {
                         Full-service dining
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={kitchenSettings.tableService}
+                      onCheckedChange={(checked) =>
+                        setKitchenSettings({
+                          ...kitchenSettings,
+                          tableService: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2191,7 +2276,15 @@ export default function Settings() {
                         Customer pickup orders
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={kitchenSettings.takeoutOrders}
+                      onCheckedChange={(checked) =>
+                        setKitchenSettings({
+                          ...kitchenSettings,
+                          takeoutOrders: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2201,7 +2294,15 @@ export default function Settings() {
                         Home delivery options
                       </p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={kitchenSettings.deliveryService}
+                      onCheckedChange={(checked) =>
+                        setKitchenSettings({
+                          ...kitchenSettings,
+                          deliveryService: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div>
@@ -2213,7 +2314,13 @@ export default function Settings() {
                       type="number"
                       min="1"
                       max="25"
-                      defaultValue="5"
+                      value={kitchenSettings.deliveryRadius}
+                      onChange={(e) =>
+                        setKitchenSettings({
+                          ...kitchenSettings,
+                          deliveryRadius: parseInt(e.target.value) || 5,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -2227,7 +2334,15 @@ export default function Settings() {
                     <Label htmlFor="avgServiceTime">
                       Average Service Time (minutes)
                     </Label>
-                    <Select defaultValue="90">
+                    <Select 
+                      value={kitchenSettings.avgServiceTime.toString()}
+                      onValueChange={(value) =>
+                        setKitchenSettings({
+                          ...kitchenSettings,
+                          avgServiceTime: parseInt(value),
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -2248,14 +2363,30 @@ export default function Settings() {
                         Allow dietary modifications
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={kitchenSettings.specialRequests}
+                      onCheckedChange={(checked) =>
+                        setKitchenSettings({
+                          ...kitchenSettings,
+                          specialRequests: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div>
                     <Label htmlFor="noShowGrace">
                       No-Show Grace Period (minutes)
                     </Label>
-                    <Select defaultValue="15">
+                    <Select 
+                      value={kitchenSettings.noShowGrace.toString()}
+                      onValueChange={(value) =>
+                        setKitchenSettings({
+                          ...kitchenSettings,
+                          noShowGrace: parseInt(value),
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -2272,7 +2403,15 @@ export default function Settings() {
                     <Label htmlFor="tableRelease">
                       Auto Table Release (minutes)
                     </Label>
-                    <Select defaultValue="30">
+                    <Select 
+                      value={kitchenSettings.tableRelease.toString()}
+                      onValueChange={(value) =>
+                        setKitchenSettings({
+                          ...kitchenSettings,
+                          tableRelease: parseInt(value),
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -2314,7 +2453,15 @@ export default function Settings() {
                         Visa, Mastercard, Amex
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={paymentSettings.creditCards}
+                      onCheckedChange={(checked) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          creditCards: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2322,7 +2469,15 @@ export default function Settings() {
                       <Label>Cash Payments</Label>
                       <p className="text-sm text-gray-500">Physical currency</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={paymentSettings.cashPayments}
+                      onCheckedChange={(checked) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          cashPayments: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2332,7 +2487,15 @@ export default function Settings() {
                         Apple Pay, Google Pay
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={paymentSettings.digitalPayments}
+                      onCheckedChange={(checked) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          digitalPayments: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2342,14 +2505,30 @@ export default function Settings() {
                         Security deposit requirement
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={paymentSettings.requireDeposit}
+                      onCheckedChange={(checked) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          requireDeposit: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div>
                     <Label htmlFor="groupThreshold">
                       Large Group Threshold
                     </Label>
-                    <Select defaultValue="8">
+                    <Select 
+                      value={paymentSettings.groupThreshold.toString()}
+                      onValueChange={(value) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          groupThreshold: parseInt(value),
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -2370,7 +2549,15 @@ export default function Settings() {
 
                   <div>
                     <Label>Cancellation Policy</Label>
-                    <Select defaultValue="24h">
+                    <Select 
+                      value={paymentSettings.cancellationPolicy}
+                      onValueChange={(value) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          cancellationPolicy: value,
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -2385,7 +2572,15 @@ export default function Settings() {
 
                   <div>
                     <Label>Refund Policy</Label>
-                    <Select defaultValue="full">
+                    <Select 
+                      value={paymentSettings.refundPolicy}
+                      onValueChange={(value) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          refundPolicy: value,
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -2410,7 +2605,13 @@ export default function Settings() {
                       min="0"
                       max="25"
                       step="0.5"
-                      placeholder="0"
+                      value={paymentSettings.serviceFee}
+                      onChange={(e) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          serviceFee: parseFloat(e.target.value) || 0,
+                        })
+                      }
                     />
                     <p className="text-sm text-gray-500 mt-1">
                       Optional service charge percentage
@@ -2425,7 +2626,13 @@ export default function Settings() {
                       min="0"
                       max="15"
                       step="0.25"
-                      placeholder="8.25"
+                      value={paymentSettings.taxRate}
+                      onChange={(e) =>
+                        setPaymentSettings({
+                          ...paymentSettings,
+                          taxRate: parseFloat(e.target.value) || 8.25,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -2458,7 +2665,15 @@ export default function Settings() {
                         Points-based rewards
                       </p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={customerSettings.loyaltyProgram}
+                      onCheckedChange={(checked) =>
+                        setCustomerSettings({
+                          ...customerSettings,
+                          loyaltyProgram: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2468,7 +2683,15 @@ export default function Settings() {
                         Special birthday offers
                       </p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={customerSettings.birthdayRewards}
+                      onCheckedChange={(checked) =>
+                        setCustomerSettings({
+                          ...customerSettings,
+                          birthdayRewards: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2476,22 +2699,54 @@ export default function Settings() {
                       <Label>Feedback Collection</Label>
                       <p className="text-sm text-gray-500">Post-meal surveys</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={customerSettings.feedbackCollection}
+                      onCheckedChange={(checked) =>
+                        setCustomerSettings({
+                          ...customerSettings,
+                          feedbackCollection: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div>
                     <Label>Review Platform Integration</Label>
                     <div className="space-y-2 mt-2">
                       <div className="flex items-center space-x-2">
-                        <Switch />
+                        <Switch 
+                          checked={customerSettings.googleReviews}
+                          onCheckedChange={(checked) =>
+                            setCustomerSettings({
+                              ...customerSettings,
+                              googleReviews: checked,
+                            })
+                          }
+                        />
                         <span className="text-sm">Google Reviews</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Switch />
+                        <Switch 
+                          checked={customerSettings.yelpIntegration}
+                          onCheckedChange={(checked) =>
+                            setCustomerSettings({
+                              ...customerSettings,
+                              yelpIntegration: checked,
+                            })
+                          }
+                        />
                         <span className="text-sm">Yelp Integration</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Switch />
+                        <Switch 
+                          checked={customerSettings.tripAdvisor}
+                          onCheckedChange={(checked) =>
+                            setCustomerSettings({
+                              ...customerSettings,
+                              tripAdvisor: checked,
+                            })
+                          }
+                        />
                         <span className="text-sm">TripAdvisor</span>
                       </div>
                     </div>
@@ -2510,7 +2765,15 @@ export default function Settings() {
                         Post-visit appreciation
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={customerSettings.thankYouMessages}
+                      onCheckedChange={(checked) =>
+                        setCustomerSettings({
+                          ...customerSettings,
+                          thankYouMessages: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2520,7 +2783,15 @@ export default function Settings() {
                         Private events & tastings
                       </p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={customerSettings.specialEventInvitations}
+                      onCheckedChange={(checked) =>
+                        setCustomerSettings({
+                          ...customerSettings,
+                          specialEventInvitations: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2528,14 +2799,30 @@ export default function Settings() {
                       <Label>Newsletter Subscriptions</Label>
                       <p className="text-sm text-gray-500">Monthly updates</p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={customerSettings.newsletterSubscriptions}
+                      onCheckedChange={(checked) =>
+                        setCustomerSettings({
+                          ...customerSettings,
+                          newsletterSubscriptions: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div>
                     <Label htmlFor="avgResponseTime">
                       Average Response Time
                     </Label>
-                    <Select defaultValue="2h">
+                    <Select 
+                      value={customerSettings.avgResponseTime}
+                      onValueChange={(value) =>
+                        setCustomerSettings({
+                          ...customerSettings,
+                          avgResponseTime: value,
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -2578,7 +2865,15 @@ export default function Settings() {
                         Time-based discounts
                       </p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={marketingSettings.happyHour}
+                      onCheckedChange={(checked) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          happyHour: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2588,7 +2883,15 @@ export default function Settings() {
                         Morning reservations
                       </p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={marketingSettings.earlyBirdDiscounts}
+                      onCheckedChange={(checked) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          earlyBirdDiscounts: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2598,7 +2901,15 @@ export default function Settings() {
                         Large party savings
                       </p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={marketingSettings.groupDiscounts}
+                      onCheckedChange={(checked) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          groupDiscounts: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2606,12 +2917,30 @@ export default function Settings() {
                       <Label>Seasonal Promotions</Label>
                       <p className="text-sm text-gray-500">Holiday specials</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={marketingSettings.seasonalPromotions}
+                      onCheckedChange={(checked) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          seasonalPromotions: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div>
                     <Label htmlFor="promoCode">Default Promo Code</Label>
-                    <Input id="promoCode" placeholder="WELCOME10" />
+                    <Input 
+                      id="promoCode" 
+                      value={marketingSettings.promoCode}
+                      onChange={(e) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          promoCode: e.target.value,
+                        })
+                      }
+                      placeholder="WELCOME10" 
+                    />
                   </div>
                 </div>
 
@@ -2625,7 +2954,15 @@ export default function Settings() {
                       <Label>Instagram Integration</Label>
                       <p className="text-sm text-gray-500">Photo sharing</p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={marketingSettings.instagramIntegration}
+                      onCheckedChange={(checked) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          instagramIntegration: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2633,7 +2970,15 @@ export default function Settings() {
                       <Label>Facebook Check-ins</Label>
                       <p className="text-sm text-gray-500">Location tagging</p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={marketingSettings.facebookCheckins}
+                      onCheckedChange={(checked) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          facebookCheckins: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -2641,17 +2986,45 @@ export default function Settings() {
                       <Label>Twitter Updates</Label>
                       <p className="text-sm text-gray-500">Daily specials</p>
                     </div>
-                    <Switch />
+                    <Switch 
+                      checked={marketingSettings.twitterUpdates}
+                      onCheckedChange={(checked) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          twitterUpdates: checked,
+                        })
+                      }
+                    />
                   </div>
 
                   <div>
                     <Label htmlFor="hashtag">Restaurant Hashtag</Label>
-                    <Input id="hashtag" placeholder="#YourRestaurant" />
+                    <Input 
+                      id="hashtag" 
+                      value={marketingSettings.hashtag}
+                      onChange={(e) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          hashtag: e.target.value,
+                        })
+                      }
+                      placeholder="#YourRestaurant" 
+                    />
                   </div>
 
                   <div>
                     <Label htmlFor="socialHandle">Social Media Handle</Label>
-                    <Input id="socialHandle" placeholder="@yourrestaurant" />
+                    <Input 
+                      id="socialHandle" 
+                      value={marketingSettings.socialHandle}
+                      onChange={(e) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          socialHandle: e.target.value,
+                        })
+                      }
+                      placeholder="@yourrestaurant" 
+                    />
                   </div>
                 </div>
               </div>
