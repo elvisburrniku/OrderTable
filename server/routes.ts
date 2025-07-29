@@ -5643,6 +5643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user?.id,
           action: "update_settings",
           eventType: "settings_update",
+          description: "Restaurant settings updated",
           details: `Settings updated: ${Object.keys(settingsData).join(', ')}`,
           timestamp: new Date(),
         });
