@@ -22,6 +22,10 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-29**: ✅ SETTINGS DATA PERSISTENCE FIXED - Successfully resolved settings saving issue by fixing database constraints and removing duplicate API routes
+- **Database Fix**: Fixed activity_log table constraint error that was preventing settings from being saved to the database
+- **API Route Fix**: Removed duplicate PUT endpoint that was causing conflicts in the settings update functionality
+- **Data Persistence Verified**: Settings page at /3/settings now saves data properly to PostgreSQL database with JSON storage for email_settings and general_settings columns
 - **2025-07-29**: ✅ MIGRATION FROM REPLIT AGENT TO REPLIT ENVIRONMENT COMPLETED - Successfully migrated restaurant booking management system with verified data persistence
 - **Settings Data Persistence**: Confirmed settings are saving properly to PostgreSQL database with JSON storage for email_settings and general_settings columns
 - **Database Connectivity**: Verified PostgreSQL database is connected and operational with all restaurant management features working correctly

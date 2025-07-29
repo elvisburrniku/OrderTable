@@ -5642,6 +5642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId,
           userId: req.user?.id,
           action: "update_settings",
+          eventType: "settings_update",
           details: `Settings updated: ${Object.keys(settingsData).join(', ')}`,
           timestamp: new Date(),
         });
@@ -5657,54 +5658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  app.put(
-    "/api/tenants/:tenantId/restaurants/:restaurantId/settings",
-    validateTenant,
-    requirePermission(PERMISSIONS.EDIT_SETTINGS),
-    async (req, res) => {
-      try {
-        const restaurantId = parseInt(req.params.restaurantId);
-        const tenantId = parseInt(req.params.tenantId);
 
-        const restaurant = await storage.getRestaurantById(restaurantId);
-        if (!restaurant || restaurant.tenantId !== tenantId) {
-          return res.status(404).json({ message: "Restaurant not found" });
-        }
-
-        const updatedSettings = await storage.updateRestaurantSettings(
-          restaurantId,
-          tenantId,
-          req.body,
-        );
-
-        // Log settings update activity
-        const sessionUser = (req as any).session?.user;
-        await logActivity({
-          restaurantId,
-          tenantId,
-          eventType: "settings_update",
-          description: "Restaurant settings updated",
-          source: "manual",
-          userEmail: sessionUser?.email,
-          userLogin: sessionUser?.email,
-          ipAddress: req.ip,
-          userAgent: req.get("User-Agent"),
-          details: {
-            updatedSections: Object.keys(req.body),
-            generalSettings: req.body.generalSettings ? "updated" : "unchanged",
-          },
-        });
-
-        res.json({
-          message: "Settings updated successfully",
-          settings: updatedSettings,
-        });
-      } catch (error) {
-        console.error("Error updating settings:", error);
-        res.status(500).json({ message: "Internal server error" });
-      }
-    },
-  );
 
   // Tables routes
   app.get(
