@@ -1485,11 +1485,29 @@ export class DatabaseStorage implements IStorage {
         },
         onlineBooking: {
           bookingFlow: "guest_first",
-          interval: "15 min.",
+          interval: 15,
           maxBookingsPerTime: "unlimited",
           displayFormat: "time_only",
           guestCapacitySelection: "dropdown",
-          tableSelection: "disabled"
+          tableSelection: "disabled",
+          minGuests: 1,
+          maxGuests: 10,
+          minNotice: 1,
+          maxNotice: 30,
+          maxCapacity: "unlimited",
+          maxGuestsPerTime: "unlimited",
+          collectEmail: false,
+          emailRequired: false,
+          collectAddress: "none",
+          confirmNewsletter: false,
+          confirmDuration: false,
+          confirmUrl: "",
+          privacyPolicyUrl: ""
+        },
+        manualBooking: {
+          tableSuggestions: false,
+          interval: 15,
+          initialsRequired: false
         },
         administration: {
           newBookingNotification: false

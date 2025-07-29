@@ -1257,7 +1257,7 @@ export default function Settings() {
                     <div>
                       <Label>Booking flow:</Label>
                       <Select
-                        value={bookingSettings.onlineBooking.bookingFlow}
+                        value={bookingSettings.onlineBooking?.bookingFlow || "guest_first"}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1285,7 +1285,7 @@ export default function Settings() {
                     <div>
                       <Label>Min. guests:</Label>
                       <Select
-                        value={bookingSettings.onlineBooking.minGuests.toString()}
+                        value={(bookingSettings.onlineBooking?.minGuests || 1).toString()}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1312,7 +1312,7 @@ export default function Settings() {
                     <div>
                       <Label>Max. guests:</Label>
                       <Select
-                        value={bookingSettings.onlineBooking.maxGuests.toString()}
+                        value={(bookingSettings.onlineBooking?.maxGuests || 10).toString()}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1339,7 +1339,7 @@ export default function Settings() {
                     <div>
                       <Label>Min. notice:</Label>
                       <Select
-                        value={`${bookingSettings.onlineBooking.minNotice} hour`}
+                        value={`${bookingSettings.onlineBooking?.minNotice || 1} hour`}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1368,7 +1368,7 @@ export default function Settings() {
                     <div>
                       <Label>Max. notice:</Label>
                       <Select
-                        value={`${bookingSettings.onlineBooking.maxNotice} days`}
+                        value={`${bookingSettings.onlineBooking?.maxNotice || 30} days`}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1396,7 +1396,7 @@ export default function Settings() {
                     <div>
                       <Label>Interval:</Label>
                       <Select
-                        value={`${bookingSettings.onlineBooking.interval} min.`}
+                        value={`${bookingSettings.onlineBooking?.interval || 15} min.`}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1427,7 +1427,7 @@ export default function Settings() {
                         Max. bookings per arrival time:
                       </Label>
                       <Select
-                        value={bookingSettings.onlineBooking.maxBookingsPerTime}
+                        value={bookingSettings.onlineBooking?.maxBookingsPerTime || "unlimited"}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1458,7 +1458,7 @@ export default function Settings() {
                         Max. guests per arrival time:
                       </Label>
                       <Select
-                        value={bookingSettings.onlineBooking.maxGuestsPerTime}
+                        value={bookingSettings.onlineBooking?.maxGuestsPerTime || "unlimited"}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1489,7 +1489,7 @@ export default function Settings() {
                         Max. capacity (concurrent guests):
                       </Label>
                       <Select
-                        value={bookingSettings.onlineBooking.maxCapacity}
+                        value={bookingSettings.onlineBooking?.maxCapacity || "unlimited"}
                         onValueChange={(value) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1517,7 +1517,7 @@ export default function Settings() {
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <Switch
-                        checked={bookingSettings.onlineBooking.collectEmail}
+                        checked={bookingSettings.onlineBooking?.collectEmail || false}
                         onCheckedChange={(checked) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1536,7 +1536,7 @@ export default function Settings() {
 
                     <div className="flex items-center space-x-2">
                       <Switch
-                        checked={bookingSettings.onlineBooking.emailRequired}
+                        checked={bookingSettings.onlineBooking?.emailRequired || false}
                         onCheckedChange={(checked) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1562,7 +1562,7 @@ export default function Settings() {
                         <div className="flex items-center space-x-2">
                           <Switch
                             checked={
-                              bookingSettings.onlineBooking.collectAddress ===
+                              (bookingSettings.onlineBooking?.collectAddress || "none") ===
                               "zipcode"
                             }
                             onCheckedChange={(checked) =>
@@ -1580,7 +1580,7 @@ export default function Settings() {
                         <div className="flex items-center space-x-2">
                           <Switch
                             checked={
-                              bookingSettings.onlineBooking.collectAddress ===
+                              (bookingSettings.onlineBooking?.collectAddress || "none") ===
                               "full"
                             }
                             onCheckedChange={(checked) =>
@@ -1601,7 +1601,7 @@ export default function Settings() {
                     <div className="flex items-center space-x-2">
                       <Switch
                         checked={
-                          bookingSettings.onlineBooking.confirmNewsletter
+                          bookingSettings.onlineBooking?.confirmNewsletter || false
                         }
                         onCheckedChange={(checked) =>
                           setBookingSettings({
@@ -1621,7 +1621,7 @@ export default function Settings() {
 
                     <div className="flex items-center space-x-2">
                       <Switch
-                        checked={bookingSettings.onlineBooking.confirmDuration}
+                        checked={bookingSettings.onlineBooking?.confirmDuration || false}
                         onCheckedChange={(checked) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1650,7 +1650,7 @@ export default function Settings() {
                         id="confirmUrl"
                         type="url"
                         placeholder="Test URL placeholder - enter your booking confirmation page"
-                        value={bookingSettings.onlineBooking.confirmUrl}
+                        value={bookingSettings.onlineBooking?.confirmUrl || ""}
                         onChange={(e) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1675,7 +1675,7 @@ export default function Settings() {
                         id="privacyPolicyUrl"
                         type="url"
                         placeholder="Test privacy policy URL - enter your privacy policy page"
-                        value={bookingSettings.onlineBooking.privacyPolicyUrl}
+                        value={bookingSettings.onlineBooking?.privacyPolicyUrl || ""}
                         onChange={(e) =>
                           setBookingSettings({
                             ...bookingSettings,
@@ -1701,7 +1701,7 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Switch
-                      checked={bookingSettings.manualBooking.tableSuggestions}
+                      checked={bookingSettings.manualBooking?.tableSuggestions || false}
                       onCheckedChange={(checked) =>
                         setBookingSettings({
                           ...bookingSettings,
@@ -1724,7 +1724,7 @@ export default function Settings() {
                       Interval:
                     </Label>
                     <Select
-                      value={`${bookingSettings.manualBooking.interval} min.`}
+                      value={`${bookingSettings.manualBooking?.interval || 15} min.`}
                       onValueChange={(value) =>
                         setBookingSettings({
                           ...bookingSettings,
@@ -1757,7 +1757,7 @@ export default function Settings() {
 
                   <div className="flex items-center space-x-2">
                     <Switch
-                      checked={bookingSettings.manualBooking.initialsRequired}
+                      checked={bookingSettings.manualBooking?.initialsRequired || false}
                       onCheckedChange={(checked) =>
                         setBookingSettings({
                           ...bookingSettings,
