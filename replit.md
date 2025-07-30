@@ -23,6 +23,8 @@ A comprehensive restaurant booking management system with React frontend and Exp
 
 ## Recent Changes
 - **2025-07-29**: ✅ COMPREHENSIVE SETTINGS INTEGRATION COMPLETED - Successfully integrated restaurant settings throughout entire project ecosystem for complete application customization
+- **Critical Bug Fixed**: Resolved guest booking settings enforcement issue where minimum/maximum guest limits configured in /3/settings were being ignored due to API returning hardcoded defaults instead of database values
+- **Settings API Fix**: Created public settings endpoint `/api/public/tenants/:tenantId/restaurants/:restaurantId/settings` that correctly reads booking_settings JSON from database and returns parsed minGuests/maxGuests values
 - **Settings Integration Scope**: All major components now read from PostgreSQL settings database: guest booking page, booking calendar, email service (Brevo), kitchen dashboard, payment processing, and administrative interfaces
 - **Guest Booking Enhancement**: Updated guest booking system to respect all restaurant settings including contact method validation (phone/email/both/either), guest count limits (min/max), booking duration preferences, minimum notice requirements, and deposit handling based on payment setups
 - **Backend Validation**: Enhanced guest booking API endpoint to use SettingsIntegration service for real-time validation against restaurant-specific rules instead of hardcoded values

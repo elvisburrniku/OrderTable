@@ -6694,6 +6694,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Public restaurant settings endpoint for guest booking
+  app.get(
+    "/api/public/tenants/:tenantId/restaurants/:restaurantId/settings",
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+
+        // Verify restaurant exists
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Query restaurant settings using getRestaurantById and check if it includes settings
+        const restaurantWithSettings = await storage.getRestaurantById(restaurantId);
+        console.log(`Restaurant with settings:`, Object.keys(restaurantWithSettings || {}));
+        console.log(`Full restaurant object:`, JSON.stringify(restaurantWithSettings, null, 2));
+
+        // Parse booking settings directly from the restaurant object
+        let parsedBookingSettings = {};
+        try {
+          if (restaurantWithSettings?.bookingSettings) {
+            if (typeof restaurantWithSettings.bookingSettings === 'string') {
+              parsedBookingSettings = JSON.parse(restaurantWithSettings.bookingSettings);
+            } else {
+              parsedBookingSettings = restaurantWithSettings.bookingSettings;
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing booking settings:', error);
+        }
+
+        console.log(`Parsed booking settings:`, parsedBookingSettings);
+        
+        // Extract online booking settings with proper handling
+        const onlineBooking = parsedBookingSettings.onlineBooking || {};
+        console.log(`Online booking settings:`, onlineBooking);
+        
+        // Handle the case where maxGuests might be missing from database
+        const minGuests = parseInt(onlineBooking.minGuests) || 1;
+        const maxGuests = parseInt(onlineBooking.maxGuests) || Math.max(10, minGuests + 8); // Default to 10 or min + 8, whichever is larger
+
+        console.log(`Final parsed - minGuests: ${minGuests}, maxGuests: ${maxGuests}`);
+
+        // Parse general settings
+        let parsedGeneralSettings = {};
+        try {
+          if (restaurantWithSettings?.generalSettings) {
+            if (typeof restaurantWithSettings.generalSettings === 'string') {
+              parsedGeneralSettings = JSON.parse(restaurantWithSettings.generalSettings);
+            } else {
+              parsedGeneralSettings = restaurantWithSettings.generalSettings;
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing general settings:', error);
+        }
+
+        // Return only public settings needed for guest booking
+        const publicSettings = {
+          generalSettings: {
+            timeZone: parsedGeneralSettings?.timeZone || 'UTC',
+            dateFormat: parsedGeneralSettings?.dateFormat || 'MM/dd/yyyy',
+            timeFormat: parsedGeneralSettings?.timeFormat || '12h',
+            currency: parsedGeneralSettings?.currency || 'USD',
+            language: parsedGeneralSettings?.language || 'en'
+          },
+          bookingSettings: {
+            onlineBooking: {
+              minGuests: minGuests,
+              maxGuests: maxGuests
+            },
+            defaultDuration: parsedBookingSettings.defaultDuration || 120,
+            maxAdvanceBookingDays: parsedBookingSettings.maxAdvanceBookingDays || 30,
+            minBookingNotice: parsedBookingSettings.minBookingNotice || 2,
+            contactMethod: parsedBookingSettings.contactMethod || 'both',
+            allowSameDayBookings: parsedBookingSettings.allowSameDayBookings !== false,
+            requireDeposit: parsedBookingSettings.requireDeposit || false,
+            depositAmount: parsedBookingSettings.depositAmount || 0
+          }
+        };
+
+        res.json(publicSettings);
+      } catch (error) {
+        console.error("Error fetching public restaurant settings:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   // Public payment setup endpoint for guest booking
   app.get(
     "/api/public/tenants/:tenantId/restaurants/:restaurantId/payment-setup",

@@ -47,7 +47,6 @@ export default function GuestBooking() {
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [guestCount, setGuestCount] = useState(2);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [customerData, setCustomerData] = useState({
@@ -65,6 +64,18 @@ export default function GuestBooking() {
   // Booking rules based on settings
   const minGuests = bookingSettings.onlineBooking?.minGuests || 1;
   const maxGuests = bookingSettings.onlineBooking?.maxGuests || 10;
+  
+  // Initialize guest count with a valid value within the min/max range
+  const [guestCount, setGuestCount] = useState(() => {
+    return Math.max(minGuests, Math.min(2, maxGuests));
+  });
+
+  // Update guest count when settings change and current value is out of range
+  useEffect(() => {
+    if (guestCount < minGuests || guestCount > maxGuests) {
+      setGuestCount(Math.max(minGuests, Math.min(guestCount, maxGuests)));
+    }
+  }, [minGuests, maxGuests, guestCount]);
   const defaultDuration = bookingSettings.defaultDuration || bookingConfig?.defaultBookingDuration || 120;
   const maxAdvanceDays = bookingSettings.maxAdvanceBookingDays || 30;
   const minNoticeHours = bookingSettings.minBookingNotice || 2;
@@ -91,9 +102,9 @@ export default function GuestBooking() {
 
   // Fetch complete restaurant settings including booking configuration
   const { data: restaurantSettings } = useQuery({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/settings`],
+    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/settings`],
     queryFn: async () => {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/settings`);
+      const response = await fetch(`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/settings`);
       if (!response.ok) return null;
       return response.json();
     },
@@ -433,33 +444,37 @@ export default function GuestBooking() {
                 Bookings available for {minGuests} to {maxGuests} guests
               </p>
             </div>
+            {/* Generate guest count buttons dynamically based on min/max settings */}
             <div className="grid grid-cols-5 gap-4 max-w-md mx-auto">
-              {Array.from({ length: Math.min(5, maxGuests) }, (_, i) => i + minGuests).map((count) => (
-                <Button
-                  key={count}
-                  variant={guestCount === count ? "default" : "outline"}
-                  className="h-16 text-lg"
-                  onClick={() => setGuestCount(count)}
-                  disabled={count < minGuests || count > maxGuests}
-                >
-                  {count}
-                </Button>
-              ))}
-            </div>
-            {maxGuests > 5 && (
-              <div className="grid grid-cols-5 gap-4 max-w-md mx-auto">
-                {Array.from({ length: Math.min(5, maxGuests - 5) }, (_, i) => i + 6).map((count) => (
+              {Array.from({ length: Math.min(5, maxGuests - minGuests + 1) }, (_, i) => minGuests + i)
+                .filter(count => count <= maxGuests)
+                .map((count) => (
                   <Button
                     key={count}
                     variant={guestCount === count ? "default" : "outline"}
                     className="h-16 text-lg"
                     onClick={() => setGuestCount(count)}
-                    disabled={count < minGuests || count > maxGuests}
                   >
                     {count}
                   </Button>
                 ))}
             </div>
+            {maxGuests > minGuests + 4 && (
+              <div className="grid grid-cols-5 gap-4 max-w-md mx-auto">
+                {Array.from({ length: Math.min(5, maxGuests - (minGuests + 4)) }, (_, i) => minGuests + 5 + i)
+                  .filter(count => count <= maxGuests)
+                  .map((count) => (
+                    <Button
+                      key={count}
+                      variant={guestCount === count ? "default" : "outline"}
+                      className="h-16 text-lg"
+                      onClick={() => setGuestCount(count)}
+                    >
+                      {count}
+                    </Button>
+                  ))}
+              </div>
+            )}
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 More than 10 people? Call {restaurant.phone || "+38349854504"}
