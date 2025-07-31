@@ -16249,29 +16249,48 @@ NEXT STEPS:
             tenant.subscriptionStatus === "cancelled" ||
             subscription.cancel_at_period_end;
 
-          // First create a Stripe product and price
-          const product = await stripe.products.create({
-            name: plan.name,
-            description: `${plan.name} subscription plan`,
-          });
+          // Get or create Stripe price for this plan
+          let stripePriceId = plan.stripePriceId;
+          
+          if (!stripePriceId) {
+            // Create a Stripe product if it doesn't exist
+            const products = await stripe.products.list({ limit: 100 });
+            let product = products.data.find(p => p.name === plan.name);
+            
+            if (!product) {
+              product = await stripe.products.create({
+                name: plan.name,
+                description: `${plan.name} subscription plan`,
+              });
+            }
 
-          const price = await stripe.prices.create({
-            currency: "usd",
-            unit_amount: plan.price,
-            recurring: {
-              interval: "month",
-            },
-            product: product.id,
-          });
+            // Create price for this plan
+            const price = await stripe.prices.create({
+              currency: "usd",
+              unit_amount: plan.price,
+              recurring: {
+                interval: "month",
+              },
+              product: product.id,
+            });
+            
+            stripePriceId = price.id;
+            
+            // Update plan with stripe price ID for future use
+            await storage.updateSubscriptionPlan(plan.id, {
+              stripePriceId: price.id
+            });
+          }
 
           const updateData: any = {
             items: [
               {
                 id: subscription.items.data[0].id,
-                price: price.id,
+                price: stripePriceId,
               },
             ],
             proration_behavior: "always_invoice",
+            default_payment_method: paymentMethods.data[0].id, // Use the existing payment method
           };
 
           // If subscription is cancelled, reactivate it
@@ -16283,6 +16302,22 @@ NEXT STEPS:
             tenant.stripeSubscriptionId,
             updateData,
           );
+
+          // Create immediate invoice for proration if needed
+          try {
+            const pendingInvoices = await stripe.invoices.list({
+              customer: customerId,
+              status: "draft",
+            });
+            
+            // Finalize any draft invoices
+            for (const invoice of pendingInvoices.data) {
+              await stripe.invoices.finalizeInvoice(invoice.id);
+              await stripe.invoices.pay(invoice.id);
+            }
+          } catch (invoiceError) {
+            console.log("No pending invoices to process:", invoiceError.message);
+          }
 
           // Get the subscription end date from Stripe
           let subscriptionEndDate = null;
@@ -16477,26 +16512,43 @@ NEXT STEPS:
             },
           });
         } else {
-          // Create new subscription with existing product and price
-          const product = await stripe.products.create({
-            name: plan.name,
-            description: `${plan.name} subscription plan`,
-          });
+          // Create new subscription - reuse existing price or create new one
+          let stripePriceId = plan.stripePriceId;
+          
+          if (!stripePriceId) {
+            // Get or create Stripe product for this plan
+            const products = await stripe.products.list({ limit: 100 });
+            let product = products.data.find(p => p.name === plan.name);
+            
+            if (!product) {
+              product = await stripe.products.create({
+                name: plan.name,
+                description: `${plan.name} subscription plan`,
+              });
+            }
 
-          const price = await stripe.prices.create({
-            currency: "usd",
-            unit_amount: plan.price,
-            recurring: {
-              interval: "month",
-            },
-            product: product.id,
-          });
+            const price = await stripe.prices.create({
+              currency: "usd",
+              unit_amount: plan.price,
+              recurring: {
+                interval: "month",
+              },
+              product: product.id,
+            });
+            
+            stripePriceId = price.id;
+            
+            // Update plan with stripe price ID for future use
+            await storage.updateSubscriptionPlan(plan.id, {
+              stripePriceId: price.id
+            });
+          }
 
           const subscription = await stripe.subscriptions.create({
             customer: customerId,
             items: [
               {
-                price: price.id,
+                price: stripePriceId,
               },
             ],
             default_payment_method: paymentMethods.data[0].id,

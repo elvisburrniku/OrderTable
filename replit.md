@@ -22,6 +22,14 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-31**: ✅ MIGRATION FROM REPLIT AGENT TO REPLIT ENVIRONMENT COMPLETED - Successfully migrated restaurant booking management system with critical subscription bug fixes
+- **Critical Subscription Bug Fixed**: Resolved subscription upgrade flow that was creating duplicate Stripe products/prices instead of reusing existing ones, causing invoice generation failures
+- **Enhanced Stripe Integration**: Improved subscription processing to use cached Stripe price IDs and properly handle payment method validation and proration billing
+- **Storage Layer Enhancement**: Added updateSubscriptionPlan method to both DatabaseStorage and MemStorage implementations for proper subscription plan management
+- **Migration Success**: All core functionality verified working including PostgreSQL database connectivity, authentication system, booking management, payment processing, email/SMS services, and admin panel
+- **Environment Compatibility**: Application successfully running on port 5000 with proper host binding (0.0.0.0) for Replit environment
+- **Service Verification**: All integrated services operational including Brevo email, Twilio SMS, Google Calendar, Stripe payments, survey scheduler, and multi-tenant architecture
+- **Security Enhancement**: Maintained robust client/server separation and security practices throughout migration process
 - **2025-07-29**: ✅ COMPREHENSIVE SETTINGS INTEGRATION COMPLETED - Successfully integrated restaurant settings throughout entire project ecosystem for complete application customization
 - **Critical Bug Fixed**: Resolved guest booking settings enforcement issue where minimum/maximum guest limits configured in /3/settings were being ignored due to API returning hardcoded defaults instead of database values
 - **Settings API Fix**: Created public settings endpoint `/api/public/tenants/:tenantId/restaurants/:restaurantId/settings` that correctly reads booking_settings JSON from database and returns parsed minGuests/maxGuests values

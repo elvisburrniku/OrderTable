@@ -920,6 +920,18 @@ export class DatabaseStorage implements IStorage {
 
     return result[0];
   }
+
+  async updateSubscriptionPlan(id: number, updates: Partial<any>): Promise<any> {
+    if (!this.db) return null;
+    const result = await this.db
+      .update(subscriptionPlans)
+      .set(updates)
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
   async createSubscriptionPlan(plan: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db

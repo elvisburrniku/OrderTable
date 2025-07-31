@@ -388,6 +388,14 @@ export class MemoryStorage implements IStorage {
     return this.subscriptionPlans.find((p) => p.id === id);
   }
 
+  async updateSubscriptionPlan(id: number, updates: Partial<SubscriptionPlan>): Promise<SubscriptionPlan | undefined> {
+    const planIndex = this.subscriptionPlans.findIndex(plan => plan.id === id);
+    if (planIndex === -1) return undefined;
+    
+    this.subscriptionPlans[planIndex] = { ...this.subscriptionPlans[planIndex], ...updates };
+    return this.subscriptionPlans[planIndex];
+  }
+
   async getFreePlan(): Promise<SubscriptionPlan | undefined> {
     return this.subscriptionPlans.find((p) => p.price === 0 && p.isActive);
   }

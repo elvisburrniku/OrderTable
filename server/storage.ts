@@ -233,6 +233,7 @@ export interface IStorage {
   getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
   getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
   getSubscriptionPlanById(id: number): Promise<SubscriptionPlan | undefined>;
+  updateSubscriptionPlan(id: number, updates: Partial<SubscriptionPlan>): Promise<SubscriptionPlan | undefined>;
   getFreePlan(): Promise<SubscriptionPlan | undefined>;
   createSubscriptionPlan(
     plan: InsertSubscriptionPlan,
