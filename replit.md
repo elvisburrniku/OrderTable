@@ -22,7 +22,9 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-- **2025-07-31**: ✅ MIGRATION FROM REPLIT AGENT TO REPLIT ENVIRONMENT COMPLETED - Successfully migrated restaurant booking management system with critical subscription bug fixes
+- **2025-07-31**: ✅ CRITICAL SUBSCRIPTION SYSTEM BUGS FIXED - Resolved multiple subscription flow issues preventing plan upgrades and billing functionality
+- **SQL Syntax Error Fixed**: Added missing stripePriceId column to subscription_plans table preventing "syntax error at or near 'where'" when updating subscription plans
+- **Database Schema Enhancement**: Updated subscription_plans schema to include stripe_price_id column for proper Stripe price caching and reuse
 - **Critical Subscription Bug Fixed**: Resolved subscription upgrade flow that was creating duplicate Stripe products/prices instead of reusing existing ones, causing invoice generation failures
 - **Enhanced Stripe Integration**: Improved subscription processing to use cached Stripe price IDs and properly handle payment method validation and proration billing
 - **Storage Layer Enhancement**: Added updateSubscriptionPlan method to both DatabaseStorage and MemStorage implementations for proper subscription plan management

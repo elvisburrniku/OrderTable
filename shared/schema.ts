@@ -31,6 +31,7 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   maxRestaurants: integer("max_restaurants").default(1),
   trialDays: integer("trial_days").default(14),
   isActive: boolean("is_active").default(true),
+  stripePriceId: text("stripe_price_id"), // Stripe price ID for reuse
   createdAt: timestamp("created_at").defaultNow(),
 });
 
