@@ -16380,7 +16380,10 @@ NEXT STEPS:
             const tableExceeded = totalTables > plan.maxTables;
             const bookingExceeded = currentBookingCount > newPlanBookingLimit;
 
-            if (tableExceeded && bookingExceeded) {
+            // Allow same plan reactivation without downgrade validation
+            const isSamePlan = currentPlan && currentPlan.id === plan.id;
+            
+            if (!isSamePlan && tableExceeded && bookingExceeded) {
               // Scenario: Both limits exceeded - comprehensive blocking
               return res.status(400).json({
                 error: "Multiple limits exceeded",
@@ -16409,7 +16412,7 @@ NEXT STEPS:
               });
             }
 
-            if (tableExceeded) {
+            if (!isSamePlan && tableExceeded) {
               // Scenario: 85 tables active - Must remove 75 tables first
               return res.status(400).json({
                 error: "Table limit exceeded",
@@ -16431,7 +16434,7 @@ NEXT STEPS:
               });
             }
 
-            if (bookingExceeded) {
+            if (!isSamePlan && bookingExceeded) {
               // Scenario: 150 bookings this month - Must wait until next month
               return res.status(400).json({
                 error: "Booking limit exceeded",
@@ -16470,6 +16473,8 @@ NEXT STEPS:
           }
 
           await storage.updateTenant(tenantUser.id, tenantUpdateData);
+          
+          console.log(`Successfully updated tenant ${tenantUser.id} subscription to plan ${plan.id} (${plan.name}) with status: ${tenantUpdateData.subscriptionStatus}`);
 
           // Send admin notification for subscription change
           if (emailService && req.user.email) {

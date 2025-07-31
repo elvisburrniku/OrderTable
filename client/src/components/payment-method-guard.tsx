@@ -95,6 +95,11 @@ function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
           description: "Payment method added successfully",
         });
         onSuccess();
+        
+        // Redirect to dashboard after successful payment method addition
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
       }
     },
     onError: (error: any) => {
