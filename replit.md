@@ -25,6 +25,8 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **2025-07-31**: ✅ CRITICAL SUBSCRIPTION SYSTEM BUGS FIXED - Resolved multiple subscription flow issues preventing plan upgrades and billing functionality
 - **SQL Syntax Error Fixed**: Added missing stripePriceId column to subscription_plans table preventing "syntax error at or near 'where'" when updating subscription plans
 - **Database Schema Enhancement**: Updated subscription_plans schema to include stripe_price_id column for proper Stripe price caching and reuse
+- **Incomplete Expired Subscription Fix**: Added comprehensive error handling for Stripe subscriptions in incomplete_expired state, system now creates new subscriptions instead of failing with "cannot update" errors
+- **Enhanced Subscription Recovery**: Implemented automatic detection and recovery from expired/invalid Stripe subscriptions with graceful fallback to new subscription creation
 - **Critical Subscription Bug Fixed**: Resolved subscription upgrade flow that was creating duplicate Stripe products/prices instead of reusing existing ones, causing invoice generation failures
 - **Enhanced Stripe Integration**: Improved subscription processing to use cached Stripe price IDs and properly handle payment method validation and proration billing
 - **Storage Layer Enhancement**: Added updateSubscriptionPlan method to both DatabaseStorage and MemStorage implementations for proper subscription plan management

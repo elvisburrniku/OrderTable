@@ -16238,7 +16238,9 @@ NEXT STEPS:
         }
 
         // Has payment method - proceed with subscription
+        let shouldCreateNewSubscription = false;
         if (tenant?.stripeSubscriptionId) {
+          try {
           // Update existing subscription
           const subscription = await stripe.subscriptions.retrieve(
             tenant.stripeSubscriptionId,
@@ -16298,10 +16300,31 @@ NEXT STEPS:
             updateData.cancel_at_period_end = false;
           }
 
-          const updatedSubscription = await stripe.subscriptions.update(
-            tenant.stripeSubscriptionId,
-            updateData,
-          );
+          let updatedSubscription;
+          try {
+            updatedSubscription = await stripe.subscriptions.update(
+              tenant.stripeSubscriptionId,
+              updateData,
+            );
+          } catch (stripeError: any) {
+            // Handle incomplete_expired or other invalid subscription states
+            if (stripeError.code === 'subscription_not_found' || 
+                stripeError.message?.includes('incomplete_expired') ||
+                stripeError.message?.includes('cannot update')) {
+              console.log(`Subscription ${tenant.stripeSubscriptionId} is expired/invalid, creating new subscription`);
+              
+              // Clear the old subscription ID
+              await storage.updateTenant(tenantUser.id, {
+                stripeSubscriptionId: null
+              });
+              
+              // Set to null so it creates a new subscription below
+              tenant.stripeSubscriptionId = null;
+              throw new Error('RECREATE_SUBSCRIPTION');
+            } else {
+              throw stripeError;
+            }
+          }
 
           // Create immediate invoice for proration if needed
           try {
@@ -16516,7 +16539,17 @@ NEXT STEPS:
               interval: plan.interval,
             },
           });
-        } else {
+          } catch (error: any) {
+            if (error.message === 'RECREATE_SUBSCRIPTION') {
+              console.log('Subscription expired, will create new one');
+              shouldCreateNewSubscription = true;
+            } else {
+              throw error;
+            }
+          }
+        }
+        
+        if (!tenant?.stripeSubscriptionId || shouldCreateNewSubscription) {
           // Create new subscription - reuse existing price or create new one
           let stripePriceId = plan.stripePriceId;
           
