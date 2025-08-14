@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
-import { Phone, Bot, Settings, Languages, MessageCircle, Play, Pause } from 'lucide-react';
+import { Phone, Bot, Settings, Languages, MessageCircle, Play, Pause, PhoneCall, Clock, DollarSign, User, Calendar, FileText } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,6 +59,20 @@ interface PhoneNumber {
     sms: boolean;
     mms: boolean;
   };
+}
+
+interface VoiceCallLog {
+  id: number;
+  callerPhone: string;
+  callDirection: string;
+  callStatus: string;
+  duration: number;
+  cost: string;
+  startTime: string;
+  transcription?: string;
+  bookingCreated?: boolean;
+  bookingDetails?: any;
+  agentResponse?: any;
 }
 
 const voiceAgentSchema = z.object({
@@ -120,6 +134,12 @@ export default function VoiceAgents() {
   // Fetch available phone numbers
   const { data: phoneNumbers = [] } = useQuery<PhoneNumber[]>({
     queryKey: [`/api/tenants/${tenantId}/phone-numbers`]
+  });
+
+  // Fetch voice call logs
+  const { data: callLogs = [] } = useQuery<VoiceCallLog[]>({
+    queryKey: [`/api/tenants/${tenantId}/voice-call-logs`],
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
 
   // Update voice agent configuration
@@ -307,6 +327,159 @@ export default function VoiceAgents() {
             </CardContent>
           </Card>
         )}
+
+        {/* Voice Call Logs */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PhoneCall className="h-5 w-5" />
+              Recent Call Logs
+            </CardTitle>
+            <CardDescription>
+              Recent voice agent call activity and booking attempts
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {callLogs.length === 0 ? (
+              <div className="text-center py-8">
+                <PhoneCall className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Call Logs Yet</h3>
+                <p className="text-muted-foreground">
+                  Once customers start calling, their interactions with the AI voice agent will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {callLogs.map((log) => (
+                  <div key={log.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${
+                          log.callStatus === 'completed' ? 'bg-green-100 text-green-600' :
+                          log.callStatus === 'failed' ? 'bg-red-100 text-red-600' :
+                          'bg-yellow-100 text-yellow-600'
+                        }`}>
+                          <PhoneCall className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{log.callerPhone}</p>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(log.startTime).toLocaleDateString()}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(log.startTime).toLocaleTimeString()}
+                            </span>
+                            {log.duration && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {Math.round(log.duration / 60)}m {log.duration % 60}s
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <Badge variant={
+                          log.callStatus === 'completed' ? 'default' :
+                          log.callStatus === 'failed' ? 'destructive' :
+                          'secondary'
+                        }>
+                          {log.callStatus}
+                        </Badge>
+                        {log.cost && (
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            ${parseFloat(log.cost).toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {log.bookingDetails && (log.bookingDetails.date || log.bookingDetails.customerName) && (
+                      <div className={`mb-3 p-3 rounded-md border ${
+                        log.bookingDetails.action === 'cancelled' ? 'bg-red-50 border-red-200' :
+                        log.bookingDetails.inquiryType === 'availability' ? 'bg-blue-50 border-blue-200' :
+                        'bg-green-50 border-green-200'
+                      }`}>
+                        <div className={`flex items-center gap-2 ${
+                          log.bookingDetails.action === 'cancelled' ? 'text-red-700' :
+                          log.bookingDetails.inquiryType === 'availability' ? 'text-blue-700' :
+                          'text-green-700'
+                        }`}>
+                          <Calendar className="h-4 w-4" />
+                          <span className="font-medium">
+                            {log.bookingDetails.action === 'cancelled' ? 'Booking Cancelled' :
+                             log.bookingDetails.inquiryType === 'availability' ? 'Availability Inquiry' :
+                             'Booking Created Successfully'}
+                          </span>
+                        </div>
+                        <div className={`mt-2 text-sm ${
+                          log.bookingDetails.action === 'cancelled' ? 'text-red-600' :
+                          log.bookingDetails.inquiryType === 'availability' ? 'text-blue-600' :
+                          'text-green-600'
+                        }`}>
+                          {log.bookingDetails.date && <p>Date: {log.bookingDetails.date}</p>}
+                          {log.bookingDetails.time && <p>Time: {log.bookingDetails.time}</p>}
+                          {log.bookingDetails.guestCount && <p>Guests: {log.bookingDetails.guestCount}</p>}
+                          {log.bookingDetails.customerName && <p>Customer: {log.bookingDetails.customerName}</p>}
+                          {log.bookingDetails.originalTime && log.bookingDetails.newTime && (
+                            <p>Changed from {log.bookingDetails.originalTime} to {log.bookingDetails.newTime}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {log.transcription && (
+                      <div className="mb-3">
+                        <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Call Transcription
+                        </h4>
+                        <div className="bg-muted p-3 rounded-md text-sm">
+                          <p className="line-clamp-3">{log.transcription}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {log.agentResponse && (
+                      <div className="mb-3">
+                        <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                          <Bot className="h-4 w-4" />
+                          AI Agent Analysis
+                        </h4>
+                        <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-sm">
+                          {log.agentResponse.intent && (
+                            <p><span className="font-medium">Intent:</span> {log.agentResponse.intent}</p>
+                          )}
+                          {log.agentResponse.sentiment && (
+                            <p><span className="font-medium">Sentiment:</span> {log.agentResponse.sentiment}</p>
+                          )}
+                          {log.agentResponse.summary && (
+                            <p className="mt-1">{log.agentResponse.summary}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <User className="h-3 w-3" />
+                        <span className="capitalize">{log.callDirection}</span> call
+                      </div>
+                      {log.bookingDetails?.customerName && (
+                        <span>Customer: {log.bookingDetails.customerName}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Settings Dialog */}

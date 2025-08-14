@@ -46,4 +46,4 @@ task = "shell.exec"
 args = "npm run dev"
 
 [agent]
-integrations = ["javascript_sendgrid==1.0.0"]
+integrations = ["javascript_sendgrid==1.0.0", "javascript_database==1.0.0"]
