@@ -112,6 +112,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/table-plan$/,
         /^\/\d+\/profile$/,
         /^\/\d+\/settings$/,
+        /^\/\d+\/voice-agents$/,
         /^\/\d+\/billing$/,
         /^\/\d+\/help$/,
         /^\/\d+\/restaurant-management$/,

@@ -89,9 +89,7 @@ export default function VoiceAgents() {
 
   const { data: callLogs = [] } = useQuery<CallLog[]>({
     queryKey: ['/api/voice-call-logs'],
-    queryOptions: {
-      refetchInterval: 30000 // Refresh every 30 seconds
-    }
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
 
   const { data: restaurants = [] } = useQuery<any[]>({
@@ -341,13 +339,14 @@ export default function VoiceAgents() {
               <form onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
+                const phoneNumberIdValue = formData.get('phoneNumberId') as string;
                 createAgentMutation.mutate({
                   restaurantId: parseInt(formData.get('restaurantId') as string),
                   name: formData.get('name'),
                   greeting: formData.get('greeting'),
                   instructions: formData.get('instructions'),
                   synthflowApiKey: formData.get('synthflowApiKey'),
-                  phoneNumberId: formData.get('phoneNumberId') ? parseInt(formData.get('phoneNumberId') as string) : undefined,
+                  phoneNumberId: phoneNumberIdValue && phoneNumberIdValue !== 'none' ? parseInt(phoneNumberIdValue) : undefined,
                   voice: formData.get('voice'),
                   language: formData.get('language')
                 });
@@ -429,12 +428,12 @@ export default function VoiceAgents() {
                 </div>
                 <div>
                   <Label htmlFor="phoneNumberId">Phone Number (optional)</Label>
-                  <Select name="phoneNumberId">
+                  <Select name="phoneNumberId" defaultValue="none">
                     <SelectTrigger>
                       <SelectValue placeholder="Select a phone number" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {phoneNumbers.filter(p => p.status === 'active').map(p => (
                         <SelectItem key={p.id} value={p.id.toString()}>
                           {p.phoneNumber} - {p.friendlyName}
@@ -699,7 +698,7 @@ export default function VoiceAgents() {
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
-          {callLogs.length === 0 ? (
+          {(callLogs as CallLog[]).length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
                 <PhoneCall className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -709,7 +708,7 @@ export default function VoiceAgents() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {callLogs.map(log => (
+              {(callLogs as CallLog[]).map((log: CallLog) => (
                 <Card key={log.id}>
                   <CardContent className="py-4">
                     <div className="flex items-center justify-between">
