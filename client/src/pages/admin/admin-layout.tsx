@@ -23,7 +23,8 @@ import {
   X,
   Database,
   FileText,
-  ShoppingBag
+  ShoppingBag,
+  Phone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +73,12 @@ const navItems: NavItem[] = [
     label: "Shop Management",
     icon: ShoppingBag,
     description: "Manage products, categories, and orders"
+  },
+  {
+    id: "voice-agents",
+    label: "Voice Agents",
+    icon: Phone,
+    description: "Manage voice agent requests and phone numbers"
   },
   {
     id: "webhooks",
