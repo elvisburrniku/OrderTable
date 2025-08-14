@@ -114,6 +114,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/settings$/,
         /^\/\d+\/voice-agents$/,
         /^\/\d+\/restaurants\/\d+\/voice-agent-request$/,
+        /^\/\d+\/voice-agent-request$/,
         /^\/\d+\/billing$/,
         /^\/\d+\/help$/,
         /^\/\d+\/restaurant-management$/,

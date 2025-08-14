@@ -141,20 +141,45 @@ export class VoiceAgentRequestService {
         })
         .where(eq(voiceAgentRequests.id, data.requestId));
 
-      // Create voice agent configuration
-      const [agent] = await db
-        .insert(voiceAgents)
-        .values({
-          tenantId: request.tenantId,
-          restaurantId: request.restaurantId,
-          requestId: data.requestId,
-          isActive: false, // Will be activated after credit setup
-          isEnabledByTenant: true,
-          language: request.requestedLanguages || 'en',
-          phoneNumberId: data.phoneNumberId,
-          maxCallsPerMonth: data.maxCallsPerMonth || request.expectedCallVolume || 100
-        })
-        .returning();
+      // Check if voice agent already exists for this restaurant
+      const [existingAgent] = await db
+        .select()
+        .from(voiceAgents)
+        .where(eq(voiceAgents.restaurantId, request.restaurantId))
+        .limit(1);
+
+      let agent;
+      if (existingAgent) {
+        // Update existing agent instead of creating new one
+        [agent] = await db
+          .update(voiceAgents)
+          .set({
+            requestId: data.requestId,
+            isActive: false, // Will be activated after credit setup
+            isEnabledByTenant: true,
+            language: request.requestedLanguages || 'en',
+            phoneNumberId: data.phoneNumberId,
+            maxCallsPerMonth: data.maxCallsPerMonth || request.expectedCallVolume || 100,
+            updatedAt: new Date()
+          })
+          .where(eq(voiceAgents.id, existingAgent.id))
+          .returning();
+      } else {
+        // Create new voice agent configuration
+        [agent] = await db
+          .insert(voiceAgents)
+          .values({
+            tenantId: request.tenantId,
+            restaurantId: request.restaurantId,
+            requestId: data.requestId,
+            isActive: false, // Will be activated after credit setup
+            isEnabledByTenant: true,
+            language: request.requestedLanguages || 'en',
+            phoneNumberId: data.phoneNumberId,
+            maxCallsPerMonth: data.maxCallsPerMonth || request.expectedCallVolume || 100
+          })
+          .returning();
+      }
 
       // Initialize credit system for the tenant
       await this.initializeCreditSystem(request.tenantId);
