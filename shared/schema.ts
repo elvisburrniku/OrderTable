@@ -2117,24 +2117,36 @@ export const selectInvoiceSchema = createSelectSchema(invoices);
 export const selectWebhookLogSchema = createSelectSchema(webhookLogs);
 
 // Voice Agent Integration Tables
+// Global voice agent configuration (admin managed)
+export const systemVoiceAgent = pgTable("system_voice_agent", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().default("ReadyTable Assistant"),
+  synthflowAgentId: text("synthflow_agent_id").notNull(), // Main Synthflow agent ID
+  synthflowApiKey: text("synthflow_api_key").notNull(), // System-wide API key (encrypted)
+  defaultGreeting: text("default_greeting").notNull().default("Hello! Thank you for calling. I'm your AI assistant and I'm here to help you make a reservation."),
+  defaultInstructions: text("default_instructions").notNull().default("You are a helpful restaurant reservation assistant. Help customers make, modify, or cancel reservations. Always be polite and professional."),
+  supportedLanguages: jsonb("supported_languages").default(JSON.stringify(["en", "es", "fr", "de", "it"])),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Restaurant-specific voice agent configurations
 export const voiceAgents = pgTable("voice_agents", {
   id: serial("id").primaryKey(),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id),
-  name: text("name").notNull(),
-  synthflowAgentId: text("synthflow_agent_id").unique(), // Synthflow agent ID
-  synthflowApiKey: text("synthflow_api_key"), // Encrypted API key for this agent
+  isActive: boolean("is_active").default(false), // Tenant can only activate/deactivate
+  language: varchar("language", { length: 10 }).default("en"), // Tenant can customize language
+  customInstructions: text("custom_instructions"), // Tenant can add custom instructions
   phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id),
-  agentConfig: jsonb("agent_config").default({}), // Agent configuration (voice, language, etc.)
-  greeting: text("greeting"),
-  instructions: text("instructions"), // System prompt for the agent
-  isActive: boolean("is_active").default(true),
-  maxCallDuration: integer("max_call_duration").default(300), // in seconds
   callsPerMonth: integer("calls_per_month").default(0),
   maxCallsPerMonth: integer("max_calls_per_month").default(100),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueRestaurant: unique().on(table.restaurantId), // Each restaurant has one voice agent config
+}));
 
 export const phoneNumbers = pgTable("phone_numbers", {
   id: serial("id").primaryKey(),
@@ -2187,6 +2199,8 @@ export const voiceAgentCredits = pgTable("voice_agent_credits", {
 });
 
 // Voice Agent Types
+export type SystemVoiceAgent = InferSelectModel<typeof systemVoiceAgent>;
+export type InsertSystemVoiceAgent = InferInsertModel<typeof systemVoiceAgent>;
 export type VoiceAgent = InferSelectModel<typeof voiceAgents>;
 export type InsertVoiceAgent = InferInsertModel<typeof voiceAgents>;
 export type PhoneNumber = InferSelectModel<typeof phoneNumbers>;
@@ -2197,6 +2211,8 @@ export type VoiceAgentCredits = InferSelectModel<typeof voiceAgentCredits>;
 export type InsertVoiceAgentCredits = InferInsertModel<typeof voiceAgentCredits>;
 
 // Voice Agent Schemas
+export const insertSystemVoiceAgentSchema = createInsertSchema(systemVoiceAgent);
+export const selectSystemVoiceAgentSchema = createSelectSchema(systemVoiceAgent);
 export const insertVoiceAgentSchema = createInsertSchema(voiceAgents);
 export const selectVoiceAgentSchema = createSelectSchema(voiceAgents);
 export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers);
