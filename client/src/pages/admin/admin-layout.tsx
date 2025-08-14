@@ -81,6 +81,12 @@ const navItems: NavItem[] = [
     description: "Manage voice agent requests and phone numbers"
   },
   {
+    id: "synthflow",
+    label: "Synthflow Integration",
+    icon: Phone,
+    description: "Manage AI voice agents and Synthflow API"
+  },
+  {
     id: "webhooks",
     label: "Webhooks",
     icon: Activity,

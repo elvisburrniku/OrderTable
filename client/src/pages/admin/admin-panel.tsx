@@ -10,6 +10,7 @@ import { AdminSettings } from "./admin-settings";
 import ShopManagement from "./shop-management";
 import AdminWebhooks from "./admin-webhooks";
 import { AdminVoiceAgents } from "./admin-voice-agents";
+import SynthflowManagement from "./synthflow-management";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdminUser {
@@ -106,6 +107,8 @@ export function AdminPanel() {
         return <ShopManagement />;
       case "voice-agents":
         return <AdminVoiceAgents />;
+      case "synthflow":
+        return <SynthflowManagement />;
       case "webhooks":
         return <AdminWebhooks token={token} />;
       case "logs":

@@ -74,6 +74,7 @@ import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
 import { SubscriptionService } from "./subscription-service";
 import voiceAgentRoutes from "./voice-agent-routes";
+import synthflowRoutes from "./synthflow-routes";
 import { CancellationReminderService } from "./cancellation-reminder-service";
 import { GoogleCalendarService } from "./google-calendar-service";
 import { ConflictDetector } from "./conflict-detector";
@@ -16895,6 +16896,9 @@ NEXT STEPS:
 
   // Register voice agent routes
   app.use(voiceAgentRoutes);
+
+  // Register synthflow integration routes
+  app.use('/api/synthflow', synthflowRoutes);
 
   // Test error handling endpoint
   app.get("/api/test-error/:type", async (req, res) => {
