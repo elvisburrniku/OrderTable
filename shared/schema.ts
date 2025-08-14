@@ -2132,16 +2132,41 @@ export const systemVoiceAgent = pgTable("system_voice_agent", {
 });
 
 // Restaurant-specific voice agent configurations
+// Voice Agent Requests - Restaurants request voice agent activation
+export const voiceAgentRequests = pgTable("voice_agent_requests", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id),
+  requestedBy: integer("requested_by").notNull().references(() => users.id),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, approved, rejected, revoked
+  businessJustification: text("business_justification"), // Why they need voice agent
+  expectedCallVolume: integer("expected_call_volume").default(50), // Expected calls per month
+  requestedLanguages: text("requested_languages").default("en"), // JSON array of requested languages
+  adminNotes: text("admin_notes"), // Admin's review notes
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  revokedAt: timestamp("revoked_at"),
+  revokedReason: text("revoked_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueRestaurant: unique().on(table.restaurantId), // Each restaurant can have one active request
+}));
+
 export const voiceAgents = pgTable("voice_agents", {
   id: serial("id").primaryKey(),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id),
-  isActive: boolean("is_active").default(false), // Tenant can only activate/deactivate
-  language: varchar("language", { length: 10 }).default("en"), // Tenant can customize language
-  customInstructions: text("custom_instructions"), // Tenant can add custom instructions
+  requestId: integer("request_id").notNull().references(() => voiceAgentRequests.id),
+  isActive: boolean("is_active").default(false), // Admin-controlled activation
+  isEnabledByTenant: boolean("is_enabled_by_tenant").default(true), // Tenant can enable/disable
+  language: varchar("language", { length: 10 }).default("en"),
+  customInstructions: text("custom_instructions"),
   phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id),
   callsPerMonth: integer("calls_per_month").default(0),
   maxCallsPerMonth: integer("max_calls_per_month").default(100),
+  totalUsageCost: decimal("total_usage_cost", { precision: 10, scale: 4 }).default("0"),
+  lastBilledAt: timestamp("last_billed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
@@ -2185,22 +2210,48 @@ export const voiceCallLogs = pgTable("voice_call_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Voice Agent Credit System - €20 minimum balance, auto-charging
 export const voiceAgentCredits = pgTable("voice_agent_credits", {
   id: serial("id").primaryKey(),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id).unique(),
-  totalMinutes: integer("total_minutes").default(0),
-  usedMinutes: integer("used_minutes").default(0),
-  monthlyMinutes: integer("monthly_minutes").default(60), // Default 60 minutes per month
-  additionalMinutes: integer("additional_minutes").default(0), // Purchased extra minutes
-  costPerMinute: decimal("cost_per_minute", { precision: 10, scale: 4 }).default("0.10"),
-  lastResetDate: timestamp("last_reset_date").defaultNow(),
+  creditBalance: decimal("credit_balance", { precision: 10, scale: 2 }).default("0.00"), // Current balance in EUR
+  totalCreditsAdded: decimal("total_credits_added", { precision: 10, scale: 2 }).default("0.00"), // Total ever added
+  totalCreditsUsed: decimal("total_credits_used", { precision: 10, scale: 2 }).default("0.00"), // Total ever used
+  minimumBalance: decimal("minimum_balance", { precision: 10, scale: 2 }).default("20.00"), // €20 minimum
+  autoRechargeAmount: decimal("auto_recharge_amount", { precision: 10, scale: 2 }).default("50.00"), // Auto-add €50
+  lowBalanceThreshold: decimal("low_balance_threshold", { precision: 10, scale: 2 }).default("5.00"), // Alert at €5
+  autoRechargeEnabled: boolean("auto_recharge_enabled").default(true),
+  lastChargeDate: timestamp("last_charge_date"),
+  lastLowBalanceAlert: timestamp("last_low_balance_alert"),
+  stripeCustomerId: text("stripe_customer_id"), // For billing
+  stripePaymentMethodId: text("stripe_payment_method_id"), // For auto-charging
+  billingEmail: text("billing_email"),
+  isActive: boolean("is_active").default(false), // Must be activated by admin after approval
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Credit Transactions - Track all credit additions and usage
+export const voiceAgentTransactions = pgTable("voice_agent_transactions", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  creditId: integer("credit_id").notNull().references(() => voiceAgentCredits.id),
+  callLogId: integer("call_log_id").references(() => voiceCallLogs.id), // Link to specific call if usage
+  transactionType: varchar("transaction_type", { length: 20 }).notNull(), // credit_added, call_charge, refund
+  amount: decimal("amount", { precision: 10, scale: 4 }).notNull(), // Amount in EUR
+  balanceBefore: decimal("balance_before", { precision: 10, scale: 2 }).notNull(),
+  balanceAfter: decimal("balance_after", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"), // Human readable description
+  stripePaymentIntentId: text("stripe_payment_intent_id"), // For credit additions
+  processedBy: varchar("processed_by", { length: 20 }).default("system"), // system, admin, user
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Voice Agent Types
 export type SystemVoiceAgent = InferSelectModel<typeof systemVoiceAgent>;
 export type InsertSystemVoiceAgent = InferInsertModel<typeof systemVoiceAgent>;
+export type VoiceAgentRequest = InferSelectModel<typeof voiceAgentRequests>;
+export type InsertVoiceAgentRequest = InferInsertModel<typeof voiceAgentRequests>;
 export type VoiceAgent = InferSelectModel<typeof voiceAgents>;
 export type InsertVoiceAgent = InferInsertModel<typeof voiceAgents>;
 export type PhoneNumber = InferSelectModel<typeof phoneNumbers>;
@@ -2209,10 +2260,14 @@ export type VoiceCallLog = InferSelectModel<typeof voiceCallLogs>;
 export type InsertVoiceCallLog = InferInsertModel<typeof voiceCallLogs>;
 export type VoiceAgentCredits = InferSelectModel<typeof voiceAgentCredits>;
 export type InsertVoiceAgentCredits = InferInsertModel<typeof voiceAgentCredits>;
+export type VoiceAgentTransaction = InferSelectModel<typeof voiceAgentTransactions>;
+export type InsertVoiceAgentTransaction = InferInsertModel<typeof voiceAgentTransactions>;
 
 // Voice Agent Schemas
 export const insertSystemVoiceAgentSchema = createInsertSchema(systemVoiceAgent);
 export const selectSystemVoiceAgentSchema = createSelectSchema(systemVoiceAgent);
+export const insertVoiceAgentRequestSchema = createInsertSchema(voiceAgentRequests);
+export const selectVoiceAgentRequestSchema = createSelectSchema(voiceAgentRequests);
 export const insertVoiceAgentSchema = createInsertSchema(voiceAgents);
 export const selectVoiceAgentSchema = createSelectSchema(voiceAgents);
 export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers);
@@ -2221,3 +2276,5 @@ export const insertVoiceCallLogSchema = createInsertSchema(voiceCallLogs);
 export const selectVoiceCallLogSchema = createSelectSchema(voiceCallLogs);
 export const insertVoiceAgentCreditsSchema = createInsertSchema(voiceAgentCredits);
 export const selectVoiceAgentCreditsSchema = createSelectSchema(voiceAgentCredits);
+export const insertVoiceAgentTransactionSchema = createInsertSchema(voiceAgentTransactions);
+export const selectVoiceAgentTransactionSchema = createSelectSchema(voiceAgentTransactions);

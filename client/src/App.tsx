@@ -111,6 +111,7 @@ import PaymentPage from "./pages/PaymentPage";
 import PrePayment from "./pages/PrePayment";
 import PaymentSuccess from "./pages/payment-success";
 import VoiceAgents from "./pages/voice-agents";
+import VoiceAgentRequest from "./pages/voice-agent-request";
 
 function App() {
   return (
@@ -315,6 +316,10 @@ function App() {
                                       <Route
                                         path="/:tenantId/voice-agents"
                                         component={VoiceAgents}
+                                      />
+                                      <Route
+                                        path="/:tenantId/restaurants/:restaurantId/voice-agent-request"
+                                        component={VoiceAgentRequest}
                                       />
                                     </AutoPermissionGuard>
                                     <AutoPermissionGuard>

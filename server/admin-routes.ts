@@ -33,6 +33,14 @@ const withStripe = async <T>(operation: (stripe: Stripe) => Promise<T>, fallback
 
 // Import storage for getting tenant and plan details
 import { storage } from "./storage";
+import { voiceAgentRequestService } from "./voice-agent-request-service";
+import { 
+  voiceAgentRequests, 
+  voiceAgents, 
+  voiceAgentCredits,
+  voiceAgentTransactions,
+  phoneNumbers
+} from "../shared/schema";
 
 // Extend Request interface to include admin user
 declare global {
@@ -1237,6 +1245,191 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Update shop order status error:", error);
       res.status(500).json({ message: "Failed to update order status" });
+    }
+  });
+
+  // =====================================
+  // VOICE AGENT ADMIN MANAGEMENT
+  // =====================================
+
+  // Get all voice agent requests (Admin)
+  app.get("/api/admin/voice-agent/requests", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const requests = await voiceAgentRequestService.getAllRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Get voice agent requests error:", error);
+      res.status(500).json({ message: "Failed to fetch voice agent requests" });
+    }
+  });
+
+  // Approve voice agent request (Admin)
+  app.post("/api/admin/voice-agent/requests/:requestId/approve", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { phoneNumberId, adminNotes, maxCallsPerMonth } = req.body;
+      
+      if (!req.adminUser) {
+        return res.status(401).json({ message: "Admin authentication required" });
+      }
+
+      const agent = await voiceAgentRequestService.approveRequest({
+        requestId,
+        approvedBy: req.adminUser.id,
+        phoneNumberId,
+        adminNotes,
+        maxCallsPerMonth
+      });
+
+      res.json({
+        message: "Voice agent request approved successfully",
+        agent
+      });
+    } catch (error: any) {
+      console.error("Approve voice agent request error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to approve voice agent request" 
+      });
+    }
+  });
+
+  // Reject voice agent request (Admin)
+  app.post("/api/admin/voice-agent/requests/:requestId/reject", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { adminNotes } = req.body;
+
+      await voiceAgentRequestService.rejectRequest(requestId, adminNotes || "Request rejected by admin");
+
+      res.json({
+        message: "Voice agent request rejected successfully"
+      });
+    } catch (error: any) {
+      console.error("Reject voice agent request error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to reject voice agent request" 
+      });
+    }
+  });
+
+  // Revoke voice agent access (Admin)
+  app.post("/api/admin/voice-agent/requests/:requestId/revoke", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { revokedReason } = req.body;
+
+      await voiceAgentRequestService.revokeAccess(requestId, revokedReason || "Access revoked by admin");
+
+      res.json({
+        message: "Voice agent access revoked successfully"
+      });
+    } catch (error: any) {
+      console.error("Revoke voice agent access error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to revoke voice agent access" 
+      });
+    }
+  });
+
+  // Get all phone numbers (Admin)
+  app.get("/api/admin/voice-agent/phone-numbers", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const numbers = await db
+        .select()
+        .from(phoneNumbers)
+        .orderBy(desc(phoneNumbers.createdAt));
+
+      res.json(numbers);
+    } catch (error) {
+      console.error("Get phone numbers error:", error);
+      res.status(500).json({ message: "Failed to fetch phone numbers" });
+    }
+  });
+
+  // Assign phone number to voice agent (Admin)
+  app.post("/api/admin/voice-agent/assign-phone", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { agentId, phoneNumberId } = req.body;
+
+      await db
+        .update(voiceAgents)
+        .set({ 
+          phoneNumberId,
+          updatedAt: new Date()
+        })
+        .where(eq(voiceAgents.id, agentId));
+
+      res.json({
+        message: "Phone number assigned successfully"
+      });
+    } catch (error: any) {
+      console.error("Assign phone number error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to assign phone number" 
+      });
+    }
+  });
+
+  // Get voice agent usage statistics (Admin)
+  app.get("/api/admin/voice-agent/usage-stats", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { tenantId } = req.query;
+
+      // Get credit stats
+      let creditQuery = db.select().from(voiceAgentCredits);
+      if (tenantId) {
+        creditQuery = creditQuery.where(eq(voiceAgentCredits.tenantId, parseInt(tenantId as string)));
+      }
+      const credits = await creditQuery;
+
+      // Get transaction stats
+      let transactionQuery = db.select().from(voiceAgentTransactions);
+      if (tenantId) {
+        transactionQuery = transactionQuery.where(eq(voiceAgentTransactions.tenantId, parseInt(tenantId as string)));
+      }
+      const transactions = await transactionQuery.orderBy(desc(voiceAgentTransactions.createdAt)).limit(100);
+
+      // Calculate totals
+      const totalCreditsAdded = credits.reduce((sum, credit) => sum + parseFloat(credit.totalCreditsAdded), 0);
+      const totalCreditsUsed = credits.reduce((sum, credit) => sum + parseFloat(credit.totalCreditsUsed), 0);
+      const totalCurrentBalance = credits.reduce((sum, credit) => sum + parseFloat(credit.creditBalance), 0);
+
+      res.json({
+        credits,
+        transactions,
+        summary: {
+          totalCreditsAdded,
+          totalCreditsUsed,
+          totalCurrentBalance,
+          activeTenants: credits.filter(c => c.isActive).length,
+          totalTenants: credits.length
+        }
+      });
+    } catch (error) {
+      console.error("Get usage stats error:", error);
+      res.status(500).json({ message: "Failed to fetch usage statistics" });
+    }
+  });
+
+  // Manually add credits to tenant (Admin)
+  app.post("/api/admin/voice-agent/add-credits", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { tenantId, amount, description } = req.body;
+
+      await voiceAgentRequestService.addCredits({
+        tenantId: parseInt(tenantId),
+        amount: parseFloat(amount),
+        description: description || `Admin credit adjustment: €${amount}`
+      });
+
+      res.json({
+        message: "Credits added successfully"
+      });
+    } catch (error: any) {
+      console.error("Add credits error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to add credits" 
+      });
     }
   });
 }
