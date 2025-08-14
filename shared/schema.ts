@@ -2175,15 +2175,15 @@ export const voiceAgents = pgTable("voice_agents", {
 
 export const phoneNumbers = pgTable("phone_numbers", {
   id: serial("id").primaryKey(),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  tenantId: integer("tenant_id").references(() => tenants.id), // Optional - null means available for assignment
   phoneNumber: text("phone_number").notNull().unique(),
-  twilioPhoneSid: text("twilio_phone_sid").notNull().unique(), // Twilio Phone Number SID
+  twilioPhoneSid: text("twilio_phone_sid"), // Optional for demo/testing
   friendlyName: text("friendly_name"),
   capabilities: jsonb("capabilities").default({}), // voice, SMS, MMS capabilities
   monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }).default("0"),
   purchaseDate: timestamp("purchase_date").defaultNow(),
   releaseDate: timestamp("release_date"),
-  status: varchar("status", { length: 20 }).default("active"), // active, released, failed
+  status: varchar("status", { length: 20 }).default("available"), // available, assigned, active, released, failed
   createdAt: timestamp("created_at").defaultNow(),
 });
 

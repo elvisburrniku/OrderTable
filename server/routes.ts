@@ -12479,11 +12479,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const themes = await storage.getSeasonalMenuThemes(
-          parseInt(restaurantId),
-          parseInt(tenantId),
-        );
-        res.json(themes);
+        // Seasonal themes feature not yet implemented
+        res.json([]);
       } catch (error) {
         console.error("Error fetching seasonal themes:", error);
         res.status(500).json({ error: "Failed to fetch seasonal themes" });
