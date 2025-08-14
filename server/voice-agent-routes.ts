@@ -25,11 +25,11 @@ const purchasePhoneSchema = z.object({
 });
 
 // Get all voice agents for a tenant
-router.get('/api/voice-agents', async (req, res) => {
+router.get('/api/tenants/:tenantId/voice-agents', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
+    const tenantId = parseInt(req.params.tenantId);
     if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant ID'));
     }
 
     const agents = await storage.getVoiceAgentsByTenant(tenantId);
@@ -41,14 +41,15 @@ router.get('/api/voice-agents', async (req, res) => {
 });
 
 // Get voice agents for a specific restaurant
-router.get('/api/restaurants/:restaurantId/voice-agents', async (req, res) => {
+router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agents', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
-    if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+    const tenantId = parseInt(req.params.tenantId);
+    const restaurantId = parseInt(req.params.restaurantId);
+    
+    if (!tenantId || !restaurantId) {
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant or restaurant ID'));
     }
 
-    const restaurantId = parseInt(req.params.restaurantId);
     const agents = await storage.getVoiceAgentsByRestaurant(restaurantId, tenantId);
     res.json(agents);
   } catch (error) {
@@ -58,18 +59,19 @@ router.get('/api/restaurants/:restaurantId/voice-agents', async (req, res) => {
 });
 
 // Get voice agent by ID
-router.get('/api/voice-agents/:id', async (req, res) => {
+router.get('/api/tenants/:tenantId/voice-agents/:id', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
-    if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+    const tenantId = parseInt(req.params.tenantId);
+    const agentId = parseInt(req.params.id);
+    
+    if (!tenantId || !agentId) {
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant or agent ID'));
     }
 
-    const agentId = parseInt(req.params.id);
     const agent = await storage.getVoiceAgentById(agentId, tenantId);
     
     if (!agent) {
-      return errorHandler.handleError(res, errorHandler.notFoundError('Voice agent not found'));
+      return res.status(404).json({ error: 'Voice agent not found' });
     }
 
     res.json(agent);
@@ -80,11 +82,11 @@ router.get('/api/voice-agents/:id', async (req, res) => {
 });
 
 // Create a new voice agent
-router.post('/api/voice-agents', async (req, res) => {
+router.post('/api/tenants/:tenantId/voice-agents', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
+    const tenantId = parseInt(req.params.tenantId);
     if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant ID'));
     }
 
     const validatedData = createAgentSchema.parse(req.body);
@@ -112,20 +114,20 @@ router.post('/api/voice-agents', async (req, res) => {
 });
 
 // Update voice agent
-router.put('/api/voice-agents/:id', async (req, res) => {
+router.put('/api/tenants/:tenantId/voice-agents/:id', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
-    if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+    const tenantId = parseInt(req.params.tenantId);
+    const agentId = parseInt(req.params.id);
+    
+    if (!tenantId || !agentId) {
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant or agent ID'));
     }
 
-    const agentId = parseInt(req.params.id);
     const updates = req.body;
-
     const updatedAgent = await storage.updateVoiceAgent(agentId, updates, tenantId);
     
     if (!updatedAgent) {
-      return errorHandler.handleError(res, errorHandler.notFoundError('Voice agent not found'));
+      return res.status(404).json({ error: 'Voice agent not found' });
     }
 
     res.json(updatedAgent);
@@ -136,18 +138,19 @@ router.put('/api/voice-agents/:id', async (req, res) => {
 });
 
 // Delete voice agent
-router.delete('/api/voice-agents/:id', async (req, res) => {
+router.delete('/api/tenants/:tenantId/voice-agents/:id', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
-    if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+    const tenantId = parseInt(req.params.tenantId);
+    const agentId = parseInt(req.params.id);
+    
+    if (!tenantId || !agentId) {
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant or agent ID'));
     }
 
-    const agentId = parseInt(req.params.id);
     const success = await storage.deleteVoiceAgent(agentId, tenantId);
     
     if (!success) {
-      return errorHandler.handleError(res, errorHandler.notFoundError('Voice agent not found'));
+      return res.status(404).json({ error: 'Voice agent not found' });
     }
 
     res.json({ success: true });
@@ -160,11 +163,11 @@ router.delete('/api/voice-agents/:id', async (req, res) => {
 // Phone Number Management
 
 // Get all phone numbers for tenant
-router.get('/api/phone-numbers', async (req, res) => {
+router.get('/api/tenants/:tenantId/phone-numbers', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
+    const tenantId = parseInt(req.params.tenantId);
     if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant ID'));
     }
 
     const phoneNumbers = await storage.getPhoneNumbersByTenant(tenantId);
@@ -176,11 +179,11 @@ router.get('/api/phone-numbers', async (req, res) => {
 });
 
 // Purchase a new phone number
-router.post('/api/phone-numbers/purchase', async (req, res) => {
+router.post('/api/tenants/:tenantId/phone-numbers/purchase', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
+    const tenantId = parseInt(req.params.tenantId);
     if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant ID'));
     }
 
     const validatedData = purchasePhoneSchema.parse(req.body);
@@ -206,18 +209,19 @@ router.post('/api/phone-numbers/purchase', async (req, res) => {
 });
 
 // Release a phone number
-router.delete('/api/phone-numbers/:id', async (req, res) => {
+router.delete('/api/tenants/:tenantId/phone-numbers/:id', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
-    if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+    const tenantId = parseInt(req.params.tenantId);
+    const phoneNumberId = parseInt(req.params.id);
+    
+    if (!tenantId || !phoneNumberId) {
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant or phone number ID'));
     }
 
-    const phoneNumberId = parseInt(req.params.id);
     const success = await voiceAgentService.releasePhoneNumber(phoneNumberId, tenantId);
     
     if (!success) {
-      return errorHandler.handleError(res, errorHandler.notFoundError('Phone number not found'));
+      return res.status(404).json({ error: 'Phone number not found' });
     }
 
     res.json({ success: true });
@@ -228,14 +232,15 @@ router.delete('/api/phone-numbers/:id', async (req, res) => {
 });
 
 // Assign phone number to agent
-router.post('/api/voice-agents/:agentId/assign-number', async (req, res) => {
+router.post('/api/tenants/:tenantId/voice-agents/:agentId/assign-number', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
-    if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+    const tenantId = parseInt(req.params.tenantId);
+    const agentId = parseInt(req.params.agentId);
+    
+    if (!tenantId || !agentId) {
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant or agent ID'));
     }
 
-    const agentId = parseInt(req.params.agentId);
     const { phoneNumberId } = req.body;
 
     if (!phoneNumberId) {
@@ -258,11 +263,11 @@ router.post('/api/voice-agents/:agentId/assign-number', async (req, res) => {
 // Voice Credits Management
 
 // Get voice credits for tenant
-router.get('/api/voice-credits', async (req, res) => {
+router.get('/api/tenants/:tenantId/voice-credits', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
+    const tenantId = parseInt(req.params.tenantId);
     if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant ID'));
     }
 
     let credits = await storage.getVoiceAgentCredits(tenantId);
@@ -285,11 +290,11 @@ router.get('/api/voice-credits', async (req, res) => {
 });
 
 // Purchase additional voice minutes
-router.post('/api/voice-credits/purchase', async (req, res) => {
+router.post('/api/tenants/:tenantId/voice-credits/purchase', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
+    const tenantId = parseInt(req.params.tenantId);
     if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant ID'));
     }
 
     const { minutes } = req.body;
@@ -314,11 +319,11 @@ router.post('/api/voice-credits/purchase', async (req, res) => {
 // Call Logs
 
 // Get call logs
-router.get('/api/voice-call-logs', async (req, res) => {
+router.get('/api/tenants/:tenantId/voice-call-logs', async (req, res) => {
   try {
-    const tenantId = req.session?.tenantId;
+    const tenantId = parseInt(req.params.tenantId);
     if (!tenantId) {
-      return errorHandler.handleError(res, errorHandler.authenticationError('No tenant selected'));
+      return errorHandler.handleError(res, errorHandler.authenticationError('Invalid tenant ID'));
     }
 
     const restaurantId = req.query.restaurantId ? parseInt(req.query.restaurantId as string) : undefined;

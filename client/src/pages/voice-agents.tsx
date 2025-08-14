@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth';
 import { Phone, Bot, CreditCard, PhoneCall, Plus, Settings, Trash2, Play, Pause, DollarSign } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 
@@ -69,26 +70,32 @@ interface CallLog {
 
 export default function VoiceAgents() {
   const { toast } = useToast();
+  const { restaurant } = useAuth();
+  const tenantId = restaurant?.tenantId;
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<number | null>(null);
   const [isCreateAgentOpen, setIsCreateAgentOpen] = useState(false);
   const [isPurchasePhoneOpen, setIsPurchasePhoneOpen] = useState(false);
   const [isPurchaseMinutesOpen, setIsPurchaseMinutesOpen] = useState(false);
 
+  if (!tenantId) {
+    return <div>Loading...</div>;
+  }
+
   // Fetch data
   const { data: agents = [], isLoading: agentsLoading } = useQuery<VoiceAgent[]>({
-    queryKey: ['/api/voice-agents']
+    queryKey: [`/api/tenants/${tenantId}/voice-agents`]
   });
 
   const { data: phoneNumbers = [], isLoading: phonesLoading } = useQuery<PhoneNumber[]>({
-    queryKey: ['/api/phone-numbers']
+    queryKey: [`/api/tenants/${tenantId}/phone-numbers`]
   });
 
   const { data: credits, isLoading: creditsLoading } = useQuery<VoiceCredits>({
-    queryKey: ['/api/voice-credits']
+    queryKey: [`/api/tenants/${tenantId}/voice-credits`]
   });
 
   const { data: callLogs = [] } = useQuery<CallLog[]>({
-    queryKey: ['/api/voice-call-logs'],
+    queryKey: [`/api/tenants/${tenantId}/voice-call-logs`],
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
@@ -99,7 +106,7 @@ export default function VoiceAgents() {
   // Mutations
   const createAgentMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch('/api/voice-agents', {
+      const response = await fetch(`/api/tenants/${tenantId}/voice-agents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -108,7 +115,7 @@ export default function VoiceAgents() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/voice-agents'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/voice-agents`] });
       setIsCreateAgentOpen(false);
       toast({
         title: 'Success',
@@ -126,7 +133,7 @@ export default function VoiceAgents() {
 
   const purchasePhoneMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch('/api/phone-numbers/purchase', {
+      const response = await fetch(`/api/tenants/${tenantId}/phone-numbers/purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -135,7 +142,7 @@ export default function VoiceAgents() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/phone-numbers'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/phone-numbers`] });
       setIsPurchasePhoneOpen(false);
       toast({
         title: 'Success',
@@ -153,7 +160,7 @@ export default function VoiceAgents() {
 
   const toggleAgentMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      const response = await fetch(`/api/voice-agents/${id}`, {
+      const response = await fetch(`/api/tenants/${tenantId}/voice-agents/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive })
@@ -162,20 +169,20 @@ export default function VoiceAgents() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/voice-agents'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/voice-agents`] });
     }
   });
 
   const deleteAgentMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/voice-agents/${id}`, {
+      const response = await fetch(`/api/tenants/${tenantId}/voice-agents/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete agent');
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/voice-agents'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/voice-agents`] });
       toast({
         title: 'Success',
         description: 'Voice agent deleted successfully'
@@ -185,14 +192,14 @@ export default function VoiceAgents() {
 
   const releasePhoneMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/phone-numbers/${id}`, {
+      const response = await fetch(`/api/tenants/${tenantId}/phone-numbers/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to release phone number');
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/phone-numbers'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/phone-numbers`] });
       toast({
         title: 'Success',
         description: 'Phone number released successfully'
@@ -202,7 +209,7 @@ export default function VoiceAgents() {
 
   const purchaseMinutesMutation = useMutation({
     mutationFn: async (minutes: number) => {
-      const response = await fetch('/api/voice-credits/purchase', {
+      const response = await fetch(`/api/tenants/${tenantId}/voice-credits/purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ minutes })
@@ -211,7 +218,7 @@ export default function VoiceAgents() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/voice-credits'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/voice-credits`] });
       setIsPurchaseMinutesOpen(false);
       toast({
         title: 'Success',
