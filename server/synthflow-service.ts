@@ -313,6 +313,56 @@ Extract the following information and format as JSON:
       webhook_url: `${process.env.REPLIT_DOMAINS_APP || 'http://localhost:5000'}/api/synthflow/webhook`,
     };
   }
+
+  // SIP Call Management (for Twilio integration)
+  async makeSipCall(request: MakeCallRequest & { sip_trunk_uri?: string }): Promise<SynthflowCall> {
+    const payload = {
+      agent_id: request.agent_id,
+      phone_number: request.phone_number,
+      name: request.name,
+      custom_variables: request.custom_variables || {},
+      customer_email: request.customer_email,
+      customer_timezone: request.customer_timezone,
+      sip_trunk_uri: request.sip_trunk_uri,
+    };
+
+    return this.makeRequest('/sip-calls', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Number Management for Twilio Integration
+  async importTwilioNumber(request: {
+    phone_number: string;
+    termination_uri: string;
+    username?: string;
+    password?: string;
+    friendly_name?: string;
+  }): Promise<{ success: boolean; number_id?: string }> {
+    const payload = {
+      phone_number: request.phone_number,
+      termination_uri: request.termination_uri,
+      username: request.username,
+      password: request.password,
+      friendly_name: request.friendly_name,
+    };
+
+    return this.makeRequest('/numbers/import', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async listNumbers(): Promise<{ numbers: Array<any> }> {
+    return this.makeRequest('/numbers');
+  }
+
+  async deleteNumber(numberId: string): Promise<void> {
+    await this.makeRequest(`/numbers/${numberId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const synthflowService = new SynthflowService();

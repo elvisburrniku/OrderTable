@@ -16900,6 +16900,10 @@ NEXT STEPS:
   // Register synthflow integration routes
   app.use('/api/synthflow', synthflowRoutes);
 
+  // Register Twilio integration routes for SIP trunking
+  const twilioIntegrationRoutes = (await import('./twilio-integration-routes')).default;
+  app.use('/api/integration', twilioIntegrationRoutes);
+
   // Test error handling endpoint
   app.get("/api/test-error/:type", async (req, res) => {
     const errorType = req.params.type;

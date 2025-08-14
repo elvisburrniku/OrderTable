@@ -51,6 +51,68 @@ class TwilioSMSService {
     return this.client !== null && this.fromNumber !== null;
   }
 
+  // Get all phone numbers from Twilio account
+  public async getPhoneNumbers(): Promise<Array<{
+    sid: string;
+    phoneNumber: string;
+    friendlyName: string;
+    capabilities: {
+      voice: boolean;
+      sms: boolean;
+      mms: boolean;
+    };
+    sipTrunk?: string;
+  }>> {
+    if (!this.isConfigured()) {
+      throw new Error('Twilio is not properly configured');
+    }
+
+    try {
+      const incomingPhoneNumbers = await this.client.incomingPhoneNumbers.list();
+      
+      return incomingPhoneNumbers.map((number: any) => ({
+        sid: number.sid,
+        phoneNumber: number.phoneNumber,
+        friendlyName: number.friendlyName || number.phoneNumber,
+        capabilities: {
+          voice: number.capabilities?.voice || false,
+          sms: number.capabilities?.sms || false,
+          mms: number.capabilities?.mms || false,
+        },
+        sipTrunk: number.trunkSid || undefined
+      }));
+    } catch (error) {
+      console.error('Failed to fetch Twilio phone numbers:', error);
+      throw error;
+    }
+  }
+
+  // Get SIP trunks from Twilio
+  public async getSipTrunks(): Promise<Array<{
+    sid: string;
+    friendlyName: string;
+    terminationUri?: string;
+    originationUri?: string;
+  }>> {
+    if (!this.isConfigured()) {
+      throw new Error('Twilio is not properly configured');
+    }
+
+    try {
+      const trunks = await this.client.trunking.v1.trunks.list();
+      
+      return trunks.map((trunk: any) => ({
+        sid: trunk.sid,
+        friendlyName: trunk.friendlyName,
+        terminationUri: trunk.terminationUri,
+        originationUri: trunk.originationUri
+      }));
+    } catch (error) {
+      console.error('Failed to fetch Twilio SIP trunks:', error);
+      throw error;
+    }
+  }
+
   public async sendSMS(messageData: SMSMessage): Promise<SMSResponse> {
     if (!this.isConfigured()) {
       return {

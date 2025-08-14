@@ -82,9 +82,9 @@ const navItems: NavItem[] = [
   },
   {
     id: "synthflow",
-    label: "Synthflow Integration",
+    label: "Twilio-Synthflow",
     icon: Phone,
-    description: "Manage AI voice agents and Synthflow API"
+    description: "Manage Twilio SIP trunking with Synthflow AI agents"
   },
   {
     id: "webhooks",
