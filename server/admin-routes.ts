@@ -39,7 +39,8 @@ import {
   voiceAgents, 
   voiceAgentCredits,
   voiceAgentTransactions,
-  phoneNumbers
+  phoneNumbers,
+  tenants
 } from "../shared/schema";
 
 // Extend Request interface to include admin user
@@ -1375,8 +1376,20 @@ export function registerAdminRoutes(app: Express) {
     try {
       const { tenantId } = req.query;
 
-      // Get credit stats
-      let creditQuery = db.select().from(voiceAgentCredits);
+      // Get credit stats with tenant names
+      let creditQuery = db.select({
+        id: voiceAgentCredits.id,
+        tenantId: voiceAgentCredits.tenantId,
+        creditBalance: voiceAgentCredits.creditBalance,
+        totalCreditsAdded: voiceAgentCredits.totalCreditsAdded,
+        totalCreditsUsed: voiceAgentCredits.totalCreditsUsed,
+        isActive: voiceAgentCredits.isActive,
+        lastChargeDate: voiceAgentCredits.lastChargeDate,
+        tenantName: tenants.name,
+      })
+      .from(voiceAgentCredits)
+      .leftJoin(tenants, eq(voiceAgentCredits.tenantId, tenants.id));
+
       if (tenantId) {
         creditQuery = creditQuery.where(eq(voiceAgentCredits.tenantId, parseInt(tenantId as string)));
       }
@@ -1389,13 +1402,18 @@ export function registerAdminRoutes(app: Express) {
       }
       const transactions = await transactionQuery.orderBy(desc(voiceAgentTransactions.createdAt)).limit(100);
 
-      // Calculate totals
-      const totalCreditsAdded = credits.reduce((sum, credit) => sum + parseFloat(credit.totalCreditsAdded), 0);
-      const totalCreditsUsed = credits.reduce((sum, credit) => sum + parseFloat(credit.totalCreditsUsed), 0);
-      const totalCurrentBalance = credits.reduce((sum, credit) => sum + parseFloat(credit.creditBalance), 0);
+      // Calculate totals with proper number conversion
+      const totalCreditsAdded = credits.reduce((sum, credit) => sum + parseFloat(credit.totalCreditsAdded || '0'), 0);
+      const totalCreditsUsed = credits.reduce((sum, credit) => sum + parseFloat(credit.totalCreditsUsed || '0'), 0);
+      const totalCurrentBalance = credits.reduce((sum, credit) => sum + parseFloat(credit.creditBalance || '0'), 0);
 
       res.json({
-        credits,
+        credits: credits.map(credit => ({
+          ...credit,
+          creditBalance: parseFloat(credit.creditBalance || '0'),
+          totalCreditsAdded: parseFloat(credit.totalCreditsAdded || '0'),
+          totalCreditsUsed: parseFloat(credit.totalCreditsUsed || '0'),
+        })),
         transactions,
         summary: {
           totalCreditsAdded,

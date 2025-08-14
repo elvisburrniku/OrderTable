@@ -507,7 +507,7 @@ export function AdminVoiceAgents() {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-semibold text-green-600">
-                          €{credit.creditBalance.toFixed(2)}
+                          €{(typeof credit.creditBalance === 'number' ? credit.creditBalance : parseFloat(credit.creditBalance || '0')).toFixed(2)}
                         </p>
                         <p className="text-sm text-gray-500">Available</p>
                       </div>
@@ -640,7 +640,7 @@ export function AdminVoiceAgents() {
                 <SelectContent>
                   {creditBalances.map((credit) => (
                     <SelectItem key={credit.tenantId} value={credit.tenantId.toString()}>
-                      {credit.tenantName} (Current: €{credit.creditBalance.toFixed(2)})
+                      {credit.tenantName} (Current: €{(typeof credit.creditBalance === 'number' ? credit.creditBalance : parseFloat(credit.creditBalance || '0')).toFixed(2)})
                     </SelectItem>
                   ))}
                 </SelectContent>

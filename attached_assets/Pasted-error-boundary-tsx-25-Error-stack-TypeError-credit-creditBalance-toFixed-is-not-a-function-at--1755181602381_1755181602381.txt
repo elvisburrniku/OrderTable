@@ -1,0 +1,26 @@
+error-boundary.tsx:25 Error stack: TypeError: credit.creditBalance.toFixed is not a function
+    at https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.dev/src/pages/admin/admin-voice-agents.tsx:1153:38
+    at Array.map (<anonymous>)
+    at AdminVoiceAgents (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.dev/src/pages/admin/admin-voice-agents.tsx:1149:198)
+    at renderWithHooks (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=53be8340:11548:26)
+    at updateFunctionComponent (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=53be8340:14582:28)
+    at beginWork (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=53be8340:15924:22)
+    at beginWork$1 (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=53be8340:19753:22)
+    at performUnitOfWork (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=53be8340:19198:20)
+    at workLoopSync (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=53be8340:19137:13)
+    at renderRootSync (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=53be8340:19116:15)
+error-boundary.tsx:26 Component stack: 
+    at AdminVoiceAgents (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.dev/src/pages/admin/admin-voice-agents.tsx:40:37)
+    at main
+    at div
+    at div
+    at AdminLayout (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.dev/src/pages/admin/admin-layout.tsx:102:31)
+    at AdminPanel (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.dev/src/pages/admin/admin-panel.tsx:33:29)
+    at Route (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=53be8340:323:16)
+    at Switch (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=53be8340:379:17)
+    at QueryClientProvider (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.d…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=53be8340:2805:3)
+    at LanguageProvider (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.dev/src/contexts/language-context.tsx:21:36)
+    at ErrorBoundary (https://86ef476a-dec2-4ee1-a037-6cab366636bc-00-27gvy8h5gm9l7.kirk.replit.dev/src/components/error-boundary.tsx:7:5)
+    at App
+﻿
+
