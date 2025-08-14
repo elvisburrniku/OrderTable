@@ -13,6 +13,11 @@ export function useWebSocket({ restaurantId, onMessage }: UseWebSocketProps) {
 
   const connect = () => {
     if (!restaurantId) return;
+    
+    // Don't create a new connection if one is already open or connecting
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
 
     try {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -41,20 +46,24 @@ export function useWebSocket({ restaurantId, onMessage }: UseWebSocketProps) {
         }
       };
 
-      wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
+      wsRef.current.onclose = (event) => {
+        console.log('WebSocket disconnected, code:', event.code, 'reason:', event.reason);
         setIsConnected(false);
         
-        // Attempt to reconnect after 3 seconds
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('Attempting to reconnect...');
-          connect();
-        }, 3000);
+        // Only reconnect if the close wasn't intentional (not code 1000)
+        if (event.code !== 1000 && reconnectTimeoutRef.current === null) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('Attempting to reconnect...');
+            reconnectTimeoutRef.current = null;
+            connect();
+          }, 5000); // Increased delay to reduce connection spam
+        }
       };
 
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         setIsConnected(false);
+        // Don't immediately reconnect on error to avoid spam
       };
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
@@ -68,10 +77,12 @@ export function useWebSocket({ restaurantId, onMessage }: UseWebSocketProps) {
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
       
-      if (wsRef.current) {
-        wsRef.current.close();
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close(1000, 'Component unmounting'); // Clean close
+        wsRef.current = null;
       }
     };
   }, [restaurantId]);
