@@ -222,18 +222,54 @@ export default function VoiceAgentRequest() {
                   <div className="text-sm text-muted-foreground">
                     Submitted on: {new Date(requestData.request.createdAt).toLocaleDateString()}
                   </div>
+
+                  {/* Re-request button for rejected/revoked requests */}
+                  {(requestData.request.status === 'rejected' || requestData.request.status === 'revoked') && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {requestData.request.status === 'rejected' 
+                          ? 'Your request was rejected. You can submit a new request with updated information.'
+                          : 'Your voice agent access was revoked. You can submit a new request for reactivation.'
+                        }
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          // Reset form with previous data
+                          requestForm.reset({
+                            businessJustification: requestData.request.businessJustification,
+                            expectedCallVolume: requestData.request.expectedCallVolume,
+                            requestedLanguages: requestData.request.requestedLanguages
+                          });
+                          // Scroll to form
+                          const formElement = document.getElementById('new-request-form');
+                          if (formElement) {
+                            formElement.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }}
+                        className="w-full sm:w-auto"
+                      >
+                        Submit New Request
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* New Request Form */}
-          {!requestData?.hasRequest && (
-            <Card>
+          {(!requestData?.hasRequest || requestData?.request?.status === 'rejected' || requestData?.request?.status === 'revoked') && (
+            <Card id="new-request-form">
               <CardHeader>
-                <CardTitle>Request Voice Agent Activation</CardTitle>
+                <CardTitle>
+                  {!requestData?.hasRequest ? 'Request Voice Agent Activation' : 'Submit New Request'}
+                </CardTitle>
                 <CardDescription>
-                  Submit a request to activate AI voice agent for your restaurant. Admin approval and €20 minimum credit balance required.
+                  {!requestData?.hasRequest 
+                    ? 'Submit a request to activate AI voice agent for your restaurant. Admin approval and €20 minimum credit balance required.'
+                    : 'Submit a new request with updated information. Previous request data has been pre-filled below.'
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>

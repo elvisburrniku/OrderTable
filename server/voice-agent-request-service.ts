@@ -38,17 +38,44 @@ export class VoiceAgentRequestService {
     requestedLanguages: string;
   }): Promise<VoiceAgentRequest> {
     try {
-      // Check if there's already a request for this restaurant
-      const existingRequest = await db
+      // Check if there's already an existing request for this restaurant
+      const [existingRequest] = await db
         .select()
         .from(voiceAgentRequests)
         .where(eq(voiceAgentRequests.restaurantId, data.restaurantId))
         .limit(1);
 
-      if (existingRequest.length > 0 && existingRequest[0].status === 'pending') {
-        throw new Error('A request is already pending for this restaurant');
+      if (existingRequest) {
+        // If there's a pending request, prevent duplicate
+        if (existingRequest.status === 'pending') {
+          throw new Error('A request is already pending for this restaurant');
+        }
+        
+        // If it's approved and active, prevent new request
+        if (existingRequest.status === 'approved') {
+          throw new Error('Voice agent is already approved and active for this restaurant');
+        }
+
+        // For rejected or revoked requests, update the existing request
+        if (existingRequest.status === 'rejected' || existingRequest.status === 'revoked') {
+          const [updatedRequest] = await db
+            .update(voiceAgentRequests)
+            .set({
+              status: 'pending',
+              businessJustification: data.businessJustification,
+              expectedCallVolume: data.expectedCallVolume,
+              requestedLanguages: data.requestedLanguages,
+              adminNotes: null, // Clear previous admin notes
+              updatedAt: new Date()
+            })
+            .where(eq(voiceAgentRequests.id, existingRequest.id))
+            .returning();
+
+          return updatedRequest;
+        }
       }
 
+      // Create new request if no existing request found
       const [request] = await db
         .insert(voiceAgentRequests)
         .values({

@@ -368,6 +368,7 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request
       .select()
       .from(voiceAgentRequests)
       .where(eq(voiceAgentRequests.restaurantId, restaurantId))
+      .orderBy(desc(voiceAgentRequests.createdAt))
       .limit(1);
 
     if (!request) {
