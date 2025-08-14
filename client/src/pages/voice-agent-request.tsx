@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Phone, Clock, AlertTriangle, CheckCircle, XCircle, CreditCard, Euro, Copy } from 'lucide-react';
+import { Phone, Clock, AlertTriangle, CheckCircle, XCircle, CreditCard, Euro, Copy, History, Play } from 'lucide-react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -41,7 +41,8 @@ export default function VoiceAgentRequest() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'request' | 'credits'>('request');
+  const [activeTab, setActiveTab] = useState<'request' | 'credits' | 'call-logs'>('request');
+  const [callLogsPage, setCallLogsPage] = useState(1);
 
   // Query for existing request
   const { data: requestData, isLoading: isLoadingRequest } = useQuery({
@@ -53,6 +54,12 @@ export default function VoiceAgentRequest() {
   const { data: creditsData, isLoading: isLoadingCredits } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/voice-agent/credits`],
     enabled: !!tenantId,
+  });
+
+  // Query for call logs
+  const { data: callLogsData, isLoading: isLoadingCallLogs } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/voice-agent/call-logs`, callLogsPage],
+    enabled: !!tenantId && !!restaurantId && activeTab === 'call-logs',
   });
 
   // Form for voice agent request
@@ -175,6 +182,14 @@ export default function VoiceAgentRequest() {
         >
           <CreditCard className="w-4 h-4" />
           Credit Management
+        </Button>
+        <Button 
+          variant={activeTab === 'call-logs' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('call-logs')}
+          className="flex items-center gap-2"
+        >
+          <History className="w-4 h-4" />
+          Call History
         </Button>
       </div>
 
@@ -563,6 +578,180 @@ export default function VoiceAgentRequest() {
               </CardContent>
             </Card>
           )}
+        </div>
+      )}
+
+      {activeTab === 'call-logs' && (
+        <div className="space-y-6">
+          {/* Call Statistics */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="w-5 h-5" />
+                Call Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">
+                    {callLogsData?.callLogs?.length || 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Total Calls</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">
+                    €{parseFloat(callLogsData?.totalSpending || '0').toFixed(2)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Total Spending</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Call Logs */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Call History</CardTitle>
+              <CardDescription>
+                View all AI voice agent calls with transcriptions and customer interactions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingCallLogs ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-20 bg-gray-200 rounded-lg"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : callLogsData?.callLogs?.length > 0 ? (
+                <div className="space-y-4">
+                  {callLogsData.callLogs.map((call: any) => (
+                    <div key={call.id} className="border rounded-lg p-4 space-y-3">
+                      {/* Call Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-4 h-4 text-blue-500" />
+                          <div>
+                            <p className="font-medium">{call.callerPhone}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(call.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {call.duration ? `${Math.floor(call.duration / 60)}:${String(call.duration % 60).padStart(2, '0')}` : 'N/A'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Duration</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-green-600">
+                              €{parseFloat(call.cost || '0').toFixed(4)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Cost</p>
+                          </div>
+                          <Badge 
+                            variant={call.callStatus === 'completed' ? 'default' : 
+                                   call.callStatus === 'failed' ? 'destructive' : 'secondary'}
+                          >
+                            {call.callStatus || 'unknown'}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Transcription */}
+                      {call.transcription && (
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-3">
+                          <h4 className="font-medium mb-2 flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            Call Transcription
+                          </h4>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {call.transcription}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Booking Details */}
+                      {call.bookingDetails && (
+                        <div className="bg-blue-50 dark:bg-blue-950 rounded-md p-3">
+                          <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-200">
+                            Booking Information
+                          </h4>
+                          <div className="text-sm text-blue-700 dark:text-blue-300">
+                            <pre className="whitespace-pre-wrap">
+                              {typeof call.bookingDetails === 'string' 
+                                ? call.bookingDetails 
+                                : JSON.stringify(call.bookingDetails, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Recording */}
+                      {call.recordingUrl && (
+                        <div className="flex items-center gap-2 pt-2">
+                          <Play className="w-4 h-4 text-gray-500" />
+                          <a 
+                            href={call.recordingUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Play Recording
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Pagination */}
+                  {callLogsData.pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCallLogsPage(prev => Math.max(1, prev - 1))}
+                        disabled={callLogsPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        Page {callLogsPage} of {callLogsData.pagination.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setCallLogsPage(prev => Math.min(callLogsData.pagination.totalPages, prev + 1))}
+                        disabled={callLogsPage === callLogsData.pagination.totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Phone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    No Calls Yet
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
+                    Once customers start calling your AI voice agent, their call logs and transcriptions will appear here.
+                  </p>
+                  {requestData?.phoneNumber && (
+                    <div className="mt-4 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        Your AI agent phone number: <strong>{requestData.phoneNumber.phoneNumber}</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

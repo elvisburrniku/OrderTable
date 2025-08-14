@@ -12,7 +12,7 @@ import {
   voiceAgentRequests,
   restaurants
 } from '../shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { errorHandler } from './error-handler';
 import { voiceAgentRequestService } from './voice-agent-request-service';
 
@@ -380,8 +380,6 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request
     let phoneNumber = null;
 
     if (request.status === 'approved') {
-      console.log(`Looking for voice agent with request ID: ${request.id}`);
-      
       const agentResult = await db
         .select({
           id: voiceAgents.id,
@@ -400,8 +398,6 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request
         .leftJoin(phoneNumbers, eq(voiceAgents.phoneNumberId, phoneNumbers.id))
         .where(eq(voiceAgents.requestId, request.id))
         .limit(1);
-
-      console.log(`Agent query result:`, agentResult);
 
       if (agentResult.length > 0) {
         const agentData = agentResult[0];
@@ -423,7 +419,6 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request
             friendlyName: agentData.friendlyName
           };
         }
-        console.log(`Phone number data:`, phoneNumber);
       }
     }
 
@@ -490,6 +485,65 @@ router.post('/api/tenants/:tenantId/voice-agent/credits/topup', validateTenant, 
   } catch (error: any) {
     console.error('Error creating payment intent:', error);
     res.status(500).json({ message: 'Failed to create payment intent' });
+  }
+});
+
+// Get call logs for restaurant (Restaurant)
+router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/call-logs', validateTenant, async (req, res) => {
+  try {
+    const restaurantId = parseInt(req.params.restaurantId);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = (page - 1) * limit;
+
+    // Get call logs for this restaurant
+    const callLogs = await db
+      .select({
+        id: voiceCallLogs.id,
+        callerPhone: voiceCallLogs.callerPhone,
+        callStatus: voiceCallLogs.callStatus,
+        duration: voiceCallLogs.duration,
+        transcription: voiceCallLogs.transcription,
+        cost: voiceCallLogs.cost,
+        startTime: voiceCallLogs.startTime,
+        endTime: voiceCallLogs.endTime,
+        createdAt: voiceCallLogs.createdAt,
+        bookingDetails: voiceCallLogs.bookingDetails,
+        agentResponse: voiceCallLogs.agentResponse,
+        recordingUrl: voiceCallLogs.recordingUrl
+      })
+      .from(voiceCallLogs)
+      .where(eq(voiceCallLogs.restaurantId, restaurantId))
+      .orderBy(desc(voiceCallLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Get total count for pagination
+    const [{ count: totalCount }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(voiceCallLogs)
+      .where(eq(voiceCallLogs.restaurantId, restaurantId));
+
+    // Calculate total spending
+    const [{ totalSpending }] = await db
+      .select({ totalSpending: sql<number>`COALESCE(SUM(CAST(cost AS DECIMAL)), 0)` })
+      .from(voiceCallLogs)
+      .where(eq(voiceCallLogs.restaurantId, restaurantId));
+
+    res.json({
+      callLogs,
+      pagination: {
+        page,
+        limit,
+        totalCount: totalCount || 0,
+        totalPages: Math.ceil((totalCount || 0) / limit)
+      },
+      totalSpending: totalSpending || 0
+    });
+
+  } catch (error) {
+    console.error('Error fetching voice call logs:', error);
+    res.status(500).json({ message: 'Failed to fetch call logs' });
   }
 });
 
