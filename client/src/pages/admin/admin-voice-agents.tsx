@@ -104,7 +104,8 @@ export function AdminVoiceAgents() {
 
       if (creditsRes.ok) {
         const creditsData = await creditsRes.json();
-        setCreditBalances(creditsData);
+        // Handle the response format {"credits": [...]}
+        setCreditBalances(creditsData.credits || []);
       }
     } catch (error) {
       console.error("Error fetching voice agent data:", error);
