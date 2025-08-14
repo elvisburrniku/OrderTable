@@ -33,6 +33,7 @@ import {
   BookOpen,
   Phone,
   ExternalLink,
+  Bot,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { SneakPeekWidget } from "./sneak-peek-widget";
@@ -343,6 +344,13 @@ export default function DashboardSidebar({
       href: `/${tenantId}/surveys`,
       color: "text-indigo-600",
       requiredPermission: "access_notifications",
+    },
+    {
+      name: "Voice Agents",
+      icon: Bot,
+      href: `/${tenantId}/voice-agents`,
+      color: "text-cyan-600",
+      requiredPermission: "access_integrations",
     },
     {
       name: "Billing",

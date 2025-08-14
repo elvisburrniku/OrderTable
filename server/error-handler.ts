@@ -66,7 +66,7 @@ class ErrorHandlerService {
     }
 
     try {
-      const adminSettings = await systemSettings.get();
+      const adminSettings = await systemSettings.getSettings();
       const adminEmail = adminSettings?.adminNotificationEmail || process.env.ADMIN_EMAIL || 'admin@replit.com';
 
       const emailContent = `

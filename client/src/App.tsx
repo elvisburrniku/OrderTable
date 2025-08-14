@@ -110,6 +110,7 @@ import StripeConnectSettings from "./pages/StripeConnectSettings";
 import PaymentPage from "./pages/PaymentPage";
 import PrePayment from "./pages/PrePayment";
 import PaymentSuccess from "./pages/payment-success";
+import VoiceAgents from "./pages/voice-agents";
 
 function App() {
   return (
@@ -310,6 +311,10 @@ function App() {
                                       <Route
                                         path="/:tenantId/guard-management"
                                         component={RolePermissions}
+                                      />
+                                      <Route
+                                        path="/:tenantId/voice-agents"
+                                        component={VoiceAgents}
                                       />
                                     </AutoPermissionGuard>
                                     <AutoPermissionGuard>

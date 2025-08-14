@@ -73,6 +73,7 @@ import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
 import { SubscriptionService } from "./subscription-service";
+import voiceAgentRoutes from "./voice-agent-routes";
 import { CancellationReminderService } from "./cancellation-reminder-service";
 import { GoogleCalendarService } from "./google-calendar-service";
 import { ConflictDetector } from "./conflict-detector";
@@ -16894,6 +16895,9 @@ NEXT STEPS:
       });
     },
   );
+
+  // Register voice agent routes
+  app.use(voiceAgentRoutes);
 
   // Test error handling endpoint
   app.get("/api/test-error/:type", async (req, res) => {

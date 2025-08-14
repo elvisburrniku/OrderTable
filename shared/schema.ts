@@ -2115,3 +2115,93 @@ export type InsertInvoice = InferInsertModel<typeof invoices>;
 export const insertInvoiceSchema = createInsertSchema(invoices);
 export const selectInvoiceSchema = createSelectSchema(invoices);
 export const selectWebhookLogSchema = createSelectSchema(webhookLogs);
+
+// Voice Agent Integration Tables
+export const voiceAgents = pgTable("voice_agents", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id),
+  name: text("name").notNull(),
+  synthflowAgentId: text("synthflow_agent_id").unique(), // Synthflow agent ID
+  synthflowApiKey: text("synthflow_api_key"), // Encrypted API key for this agent
+  phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id),
+  agentConfig: jsonb("agent_config").default({}), // Agent configuration (voice, language, etc.)
+  greeting: text("greeting"),
+  instructions: text("instructions"), // System prompt for the agent
+  isActive: boolean("is_active").default(true),
+  maxCallDuration: integer("max_call_duration").default(300), // in seconds
+  callsPerMonth: integer("calls_per_month").default(0),
+  maxCallsPerMonth: integer("max_calls_per_month").default(100),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const phoneNumbers = pgTable("phone_numbers", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  phoneNumber: text("phone_number").notNull().unique(),
+  twilioPhoneSid: text("twilio_phone_sid").notNull().unique(), // Twilio Phone Number SID
+  friendlyName: text("friendly_name"),
+  capabilities: jsonb("capabilities").default({}), // voice, SMS, MMS capabilities
+  monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }).default("0"),
+  purchaseDate: timestamp("purchase_date").defaultNow(),
+  releaseDate: timestamp("release_date"),
+  status: varchar("status", { length: 20 }).default("active"), // active, released, failed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const voiceCallLogs = pgTable("voice_call_logs", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id),
+  voiceAgentId: integer("voice_agent_id").references(() => voiceAgents.id),
+  phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id),
+  bookingId: integer("booking_id").references(() => bookings.id), // If a booking was created
+  twilioCallSid: text("twilio_call_sid").unique(),
+  synthflowSessionId: text("synthflow_session_id"),
+  callerPhone: text("caller_phone").notNull(),
+  callDirection: varchar("call_direction", { length: 20 }).default("inbound"), // inbound, outbound
+  callStatus: varchar("call_status", { length: 30 }), // initiated, ringing, in-progress, completed, failed, busy, no-answer
+  duration: integer("duration"), // in seconds
+  recordingUrl: text("recording_url"),
+  transcription: text("transcription"),
+  agentResponse: jsonb("agent_response"), // AI agent's extracted information
+  bookingDetails: jsonb("booking_details"), // Extracted booking details
+  cost: decimal("cost", { precision: 10, scale: 4 }).default("0"),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const voiceAgentCredits = pgTable("voice_agent_credits", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id).unique(),
+  totalMinutes: integer("total_minutes").default(0),
+  usedMinutes: integer("used_minutes").default(0),
+  monthlyMinutes: integer("monthly_minutes").default(60), // Default 60 minutes per month
+  additionalMinutes: integer("additional_minutes").default(0), // Purchased extra minutes
+  costPerMinute: decimal("cost_per_minute", { precision: 10, scale: 4 }).default("0.10"),
+  lastResetDate: timestamp("last_reset_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Voice Agent Types
+export type VoiceAgent = InferSelectModel<typeof voiceAgents>;
+export type InsertVoiceAgent = InferInsertModel<typeof voiceAgents>;
+export type PhoneNumber = InferSelectModel<typeof phoneNumbers>;
+export type InsertPhoneNumber = InferInsertModel<typeof phoneNumbers>;
+export type VoiceCallLog = InferSelectModel<typeof voiceCallLogs>;
+export type InsertVoiceCallLog = InferInsertModel<typeof voiceCallLogs>;
+export type VoiceAgentCredits = InferSelectModel<typeof voiceAgentCredits>;
+export type InsertVoiceAgentCredits = InferInsertModel<typeof voiceAgentCredits>;
+
+// Voice Agent Schemas
+export const insertVoiceAgentSchema = createInsertSchema(voiceAgents);
+export const selectVoiceAgentSchema = createSelectSchema(voiceAgents);
+export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers);
+export const selectPhoneNumberSchema = createSelectSchema(phoneNumbers);
+export const insertVoiceCallLogSchema = createInsertSchema(voiceCallLogs);
+export const selectVoiceCallLogSchema = createSelectSchema(voiceCallLogs);
+export const insertVoiceAgentCreditsSchema = createInsertSchema(voiceAgentCredits);
+export const selectVoiceAgentCreditsSchema = createSelectSchema(voiceAgentCredits);

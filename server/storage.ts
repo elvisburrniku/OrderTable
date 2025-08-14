@@ -493,6 +493,30 @@ export interface IStorage {
   getInvoicesByTenant(tenantId: number): Promise<Invoice[]>;
   getInvoicesByRestaurant(restaurantId: number): Promise<Invoice[]>;
   updateInvoice(id: number, updates: Partial<Invoice>): Promise<Invoice | undefined>;
+
+  // Voice Agents
+  getVoiceAgentsByTenant(tenantId: number): Promise<any[]>;
+  getVoiceAgentsByRestaurant(restaurantId: number, tenantId: number): Promise<any[]>;
+  getVoiceAgentById(id: number, tenantId: number): Promise<any | undefined>;
+  createVoiceAgent(agent: any): Promise<any>;
+  updateVoiceAgent(id: number, updates: any, tenantId: number): Promise<any | undefined>;
+  deleteVoiceAgent(id: number, tenantId: number): Promise<boolean>;
+
+  // Phone Numbers
+  getPhoneNumbersByTenant(tenantId: number): Promise<any[]>;
+  getPhoneNumberById(id: number, tenantId: number): Promise<any | undefined>;
+  createPhoneNumber(phoneNumber: any): Promise<any>;
+  updatePhoneNumber(id: number, updates: any, tenantId: number): Promise<any | undefined>;
+  releasePhoneNumber(id: number, tenantId: number): Promise<boolean>;
+
+  // Voice Call Logs
+  getVoiceCallLogs(tenantId: number, restaurantId?: number, limit?: number): Promise<any[]>;
+  createVoiceCallLog(log: any): Promise<any>;
+
+  // Voice Agent Credits
+  getVoiceAgentCredits(tenantId: number): Promise<any | undefined>;
+  createVoiceAgentCredits(credits: any): Promise<any>;
+  updateVoiceAgentCredits(tenantId: number, updates: any): Promise<any | undefined>;
 }
 
 import { DatabaseStorage } from "./db-storage";

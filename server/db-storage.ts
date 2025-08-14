@@ -2804,4 +2804,215 @@ export class DatabaseStorage implements IStorage {
   async deleteExpiredReschedulingSuggestions(): Promise<void> {
     // Simplified implementation
   }
+
+  // Voice Agent Methods
+  async getVoiceAgentsByTenant(tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgents } = await import("../shared/schema");
+    return await this.db
+      .select()
+      .from(voiceAgents)
+      .where(eq(voiceAgents.tenantId, tenantId));
+  }
+
+  async getVoiceAgentsByRestaurant(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgents } = await import("../shared/schema");
+    return await this.db
+      .select()
+      .from(voiceAgents)
+      .where(and(
+        eq(voiceAgents.restaurantId, restaurantId),
+        eq(voiceAgents.tenantId, tenantId)
+      ));
+  }
+
+  async getVoiceAgentById(id: number, tenantId: number): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgents } = await import("../shared/schema");
+    const result = await this.db
+      .select()
+      .from(voiceAgents)
+      .where(and(
+        eq(voiceAgents.id, id),
+        eq(voiceAgents.tenantId, tenantId)
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async createVoiceAgent(agent: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgents } = await import("../shared/schema");
+    const [newAgent] = await this.db
+      .insert(voiceAgents)
+      .values(agent)
+      .returning();
+    return newAgent;
+  }
+
+  async updateVoiceAgent(id: number, updates: any, tenantId: number): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgents } = await import("../shared/schema");
+    const [updated] = await this.db
+      .update(voiceAgents)
+      .set(updates)
+      .where(and(
+        eq(voiceAgents.id, id),
+        eq(voiceAgents.tenantId, tenantId)
+      ))
+      .returning();
+    return updated;
+  }
+
+  async deleteVoiceAgent(id: number, tenantId: number): Promise<boolean> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgents } = await import("../shared/schema");
+    try {
+      await this.db
+        .delete(voiceAgents)
+        .where(and(
+          eq(voiceAgents.id, id),
+          eq(voiceAgents.tenantId, tenantId)
+        ));
+      return true;
+    } catch (error) {
+      console.error("Error deleting voice agent:", error);
+      return false;
+    }
+  }
+
+  // Phone Number Methods
+  async getPhoneNumbersByTenant(tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { phoneNumbers } = await import("../shared/schema");
+    return await this.db
+      .select()
+      .from(phoneNumbers)
+      .where(eq(phoneNumbers.tenantId, tenantId));
+  }
+
+  async getPhoneNumberById(id: number, tenantId: number): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { phoneNumbers } = await import("../shared/schema");
+    const result = await this.db
+      .select()
+      .from(phoneNumbers)
+      .where(and(
+        eq(phoneNumbers.id, id),
+        eq(phoneNumbers.tenantId, tenantId)
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async createPhoneNumber(phoneNumber: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { phoneNumbers } = await import("../shared/schema");
+    const [newNumber] = await this.db
+      .insert(phoneNumbers)
+      .values(phoneNumber)
+      .returning();
+    return newNumber;
+  }
+
+  async updatePhoneNumber(id: number, updates: any, tenantId: number): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { phoneNumbers } = await import("../shared/schema");
+    const [updated] = await this.db
+      .update(phoneNumbers)
+      .set(updates)
+      .where(and(
+        eq(phoneNumbers.id, id),
+        eq(phoneNumbers.tenantId, tenantId)
+      ))
+      .returning();
+    return updated;
+  }
+
+  async releasePhoneNumber(id: number, tenantId: number): Promise<boolean> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { phoneNumbers } = await import("../shared/schema");
+    try {
+      await this.db
+        .update(phoneNumbers)
+        .set({ 
+          status: 'released',
+          releaseDate: new Date()
+        })
+        .where(and(
+          eq(phoneNumbers.id, id),
+          eq(phoneNumbers.tenantId, tenantId)
+        ));
+      return true;
+    } catch (error) {
+      console.error("Error releasing phone number:", error);
+      return false;
+    }
+  }
+
+  // Voice Call Log Methods
+  async getVoiceCallLogs(tenantId: number, restaurantId?: number, limit: number = 50): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceCallLogs } = await import("../shared/schema");
+    
+    const query = this.db
+      .select()
+      .from(voiceCallLogs)
+      .where(
+        restaurantId 
+          ? and(
+              eq(voiceCallLogs.tenantId, tenantId),
+              eq(voiceCallLogs.restaurantId, restaurantId)
+            )
+          : eq(voiceCallLogs.tenantId, tenantId)
+      )
+      .orderBy(sql`${voiceCallLogs.createdAt} DESC`)
+      .limit(limit);
+
+    return await query;
+  }
+
+  async createVoiceCallLog(log: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceCallLogs } = await import("../shared/schema");
+    const [newLog] = await this.db
+      .insert(voiceCallLogs)
+      .values(log)
+      .returning();
+    return newLog;
+  }
+
+  // Voice Agent Credits Methods
+  async getVoiceAgentCredits(tenantId: number): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgentCredits } = await import("../shared/schema");
+    const result = await this.db
+      .select()
+      .from(voiceAgentCredits)
+      .where(eq(voiceAgentCredits.tenantId, tenantId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createVoiceAgentCredits(credits: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgentCredits } = await import("../shared/schema");
+    const [newCredits] = await this.db
+      .insert(voiceAgentCredits)
+      .values(credits)
+      .returning();
+    return newCredits;
+  }
+
+  async updateVoiceAgentCredits(tenantId: number, updates: any): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { voiceAgentCredits } = await import("../shared/schema");
+    const [updated] = await this.db
+      .update(voiceAgentCredits)
+      .set(updates)
+      .where(eq(voiceAgentCredits.tenantId, tenantId))
+      .returning();
+    return updated;
+  }
 }
