@@ -375,17 +375,63 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request
       return res.json({ hasRequest: false });
     }
 
-    // Get associated voice agent if approved
-    const [agent] = await db
-      .select()
-      .from(voiceAgents)
-      .where(eq(voiceAgents.requestId, request.id))
-      .limit(1);
+    // Get associated voice agent with phone number if approved
+    let agent = null;
+    let phoneNumber = null;
+
+    if (request.status === 'approved') {
+      console.log(`Looking for voice agent with request ID: ${request.id}`);
+      
+      const agentResult = await db
+        .select({
+          id: voiceAgents.id,
+          tenantId: voiceAgents.tenantId,
+          restaurantId: voiceAgents.restaurantId,
+          requestId: voiceAgents.requestId,
+          isActive: voiceAgents.isActive,
+          language: voiceAgents.language,
+          phoneNumberId: voiceAgents.phoneNumberId,
+          maxCallsPerMonth: voiceAgents.maxCallsPerMonth,
+          createdAt: voiceAgents.createdAt,
+          phoneNumber: phoneNumbers.phoneNumber,
+          friendlyName: phoneNumbers.friendlyName
+        })
+        .from(voiceAgents)
+        .leftJoin(phoneNumbers, eq(voiceAgents.phoneNumberId, phoneNumbers.id))
+        .where(eq(voiceAgents.requestId, request.id))
+        .limit(1);
+
+      console.log(`Agent query result:`, agentResult);
+
+      if (agentResult.length > 0) {
+        const agentData = agentResult[0];
+        agent = {
+          id: agentData.id,
+          tenantId: agentData.tenantId,
+          restaurantId: agentData.restaurantId,
+          requestId: agentData.requestId,
+          isActive: agentData.isActive,
+          language: agentData.language,
+          phoneNumberId: agentData.phoneNumberId,
+          maxCallsPerMonth: agentData.maxCallsPerMonth,
+          createdAt: agentData.createdAt
+        };
+        
+        if (agentData.phoneNumber) {
+          phoneNumber = {
+            phoneNumber: agentData.phoneNumber,
+            friendlyName: agentData.friendlyName
+          };
+        }
+        console.log(`Phone number data:`, phoneNumber);
+      }
+    }
 
     res.json({
       hasRequest: true,
       request,
-      agent: agent || null
+      agent: agent || null,
+      phoneNumber: phoneNumber || null
     });
   } catch (error) {
     console.error('Error fetching voice agent request:', error);

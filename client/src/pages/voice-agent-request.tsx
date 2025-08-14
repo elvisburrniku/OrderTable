@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Phone, Clock, AlertTriangle, CheckCircle, XCircle, CreditCard, Euro } from 'lucide-react';
+import { Phone, Clock, AlertTriangle, CheckCircle, XCircle, CreditCard, Euro, Copy } from 'lucide-react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -222,6 +222,52 @@ export default function VoiceAgentRequest() {
                   <div className="text-sm text-muted-foreground">
                     Submitted on: {new Date(requestData.request.createdAt).toLocaleDateString()}
                   </div>
+
+                  {/* Phone Number Display for Approved Requests */}
+                  {requestData.request.status === 'approved' && requestData.phoneNumber && (
+                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
+                      <h4 className="font-semibold text-green-800 dark:text-green-200 flex items-center gap-2 mb-2">
+                        <Phone className="w-4 h-4" />
+                        AI Agent Phone Number
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-lg p-3 border">
+                          <div>
+                            <p className="font-mono text-lg font-semibold text-gray-900 dark:text-gray-100">
+                              {requestData.phoneNumber.phoneNumber}
+                            </p>
+                            {requestData.phoneNumber.friendlyName && (
+                              <p className="text-sm text-muted-foreground">
+                                {requestData.phoneNumber.friendlyName}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(requestData.phoneNumber.phoneNumber);
+                              toast({
+                                title: "Phone number copied",
+                                description: "Phone number has been copied to your clipboard"
+                              });
+                            }}
+                            className="ml-4"
+                          >
+                            <Copy className="w-4 h-4 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
+                        <div className="text-sm text-green-700 dark:text-green-300">
+                          <p className="font-medium">✅ Your AI Voice Agent is Active!</p>
+                          <p>Customers can call this number to make reservations, ask questions, or get information about your restaurant. The AI agent will handle calls 24/7 and can process bookings directly into your system.</p>
+                        </div>
+                        <div className="text-xs text-muted-foreground bg-gray-50 dark:bg-gray-800 rounded p-2">
+                          <p><strong>Pro Tip:</strong> Add this number to your website, business cards, and Google My Business listing to let customers easily reach your AI assistant.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Re-request button for rejected/revoked requests */}
                   {(requestData.request.status === 'rejected' || requestData.request.status === 'revoked') && (
