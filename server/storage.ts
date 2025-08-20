@@ -517,6 +517,10 @@ export interface IStorage {
   getVoiceAgentCredits(tenantId: number): Promise<any | undefined>;
   createVoiceAgentCredits(credits: any): Promise<any>;
   updateVoiceAgentCredits(tenantId: number, updates: any): Promise<any | undefined>;
+
+  // Onboarding
+  updateUserPersonalInfo(userId: number, info: any): Promise<void>;
+  completeUserOnboarding(userId: number): Promise<void>;
 }
 
 import { DatabaseStorage } from "./db-storage";

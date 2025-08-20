@@ -3036,4 +3036,35 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated;
   }
+
+  async updateUserPersonalInfo(userId: number, info: any): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    const { name, dateOfBirth, emailOptIn, theme, source, platform } = info;
+    
+    await this.db
+      .update(users)
+      .set({
+        name,
+        dateOfBirth,
+        emailOptIn,
+        preferences: {
+          theme,
+          source,
+          platform,
+        },
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async completeUserOnboarding(userId: number): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    await this.db
+      .update(users)
+      .set({
+        onboardingCompleted: true,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
+  }
 }

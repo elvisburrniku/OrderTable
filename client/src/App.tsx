@@ -85,6 +85,7 @@ import GuestBookingNew from "./pages/guest-booking-new";
 import GuestBookingResponsive from "./pages/guest-booking-responsive";
 import FeedbackTest from "./pages/feedback-test";
 import SetupWizard from "./pages/setup-wizard";
+import Onboarding from "./pages/onboarding";
 import EmailTest from "./pages/email-test";
 import TestTools from "./pages/test-tools";
 import MenuManagementPage from "./pages/menu-management";
@@ -185,6 +186,7 @@ function App() {
                                 <Route path="/login" component={Login} />
                                 <Route path="/register" component={Register} />
                                 <Route path="/setup" component={SetupWizard} />
+                                <Route path="/onboarding" component={Onboarding} />
                                 <SetupGuard>
                                   <OverduePaymentGuard>
                                     <AutoPermissionGuard>

@@ -20882,7 +20882,50 @@ NEXT STEPS:
     },
   );
 
+  // Onboarding endpoints
+  app.post("/api/onboarding/personal-info", async (req, res) => {
+    try {
+      if (!req.session || !req.session.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
 
+      const { name, birthDay, birthMonth, birthYear, emailOptIn, theme, source, platform } = req.body;
+      const userId = req.session.user.id;
+
+      // Save personal information and preferences
+      await storage.updateUserPersonalInfo(userId, {
+        name,
+        dateOfBirth: `${birthYear}-${birthMonth}-${birthDay}`,
+        emailOptIn,
+        theme,
+        source,
+        platform,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving personal info:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/onboarding/complete", async (req, res) => {
+    try {
+      if (!req.session || !req.session.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const userId = req.session.user.id;
+      
+      // Mark onboarding as complete
+      await storage.completeUserOnboarding(userId);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   try {
     const { restaurantStorage } = await import("./restaurant-storage");

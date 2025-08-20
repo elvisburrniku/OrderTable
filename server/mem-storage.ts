@@ -1606,4 +1606,28 @@ export class MemoryStorage implements IStorage {
     );
     return [];
   }
+
+  async updateUserPersonalInfo(userId: number, info: any): Promise<void> {
+    const { name, dateOfBirth, emailOptIn, theme, source, platform } = info;
+    const user = this.users.find(u => u.id === userId);
+    if (user) {
+      user.name = name;
+      user.dateOfBirth = dateOfBirth;
+      user.emailOptIn = emailOptIn;
+      user.preferences = {
+        theme,
+        source,
+        platform,
+      };
+      user.updatedAt = new Date().toISOString();
+    }
+  }
+
+  async completeUserOnboarding(userId: number): Promise<void> {
+    const user = this.users.find(u => u.id === userId);
+    if (user) {
+      user.onboardingCompleted = true;
+      user.updatedAt = new Date().toISOString();
+    }
+  }
 }
