@@ -60,12 +60,17 @@ class SynthflowService {
 
   constructor() {
     this.apiKey = process.env.SYNTHFLOW_API_KEY || '';
-    if (!this.apiKey) {
-      throw new Error('SYNTHFLOW_API_KEY environment variable is required');
-    }
+  }
+
+  isConfigured(): boolean {
+    return !!this.apiKey;
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
+    if (!this.apiKey) {
+      throw new Error('Synthflow service is not configured. Please set SYNTHFLOW_API_KEY environment variable.');
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
     const response = await fetch(url, {
       ...options,
