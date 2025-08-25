@@ -718,7 +718,7 @@ export default function SetupWizard() {
     switch (currentStep) {
       case 1:
         return (
-          <form onSubmit={personalForm.handleSubmit((data) => updatePersonalInfoMutation.mutate(data))} className="space-y-6">
+          <div className="space-y-6">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Full Name</Label>
@@ -756,19 +756,26 @@ export default function SetupWizard() {
             <div className="flex justify-between pt-4">
               <div /> {/* Empty div for spacing */}
               <Button 
-                type="submit" 
-                disabled={updatePersonalInfoMutation.isPending}
+                type="button"
+                onClick={() => {
+                  const name = personalForm.getValues("name");
+                  if (!name || name.trim() === "") {
+                    personalForm.setError("name", { message: "Name is required" });
+                    return;
+                  }
+                  setCurrentStep(2);
+                }}
                 className="flex items-center gap-2"
               >
                 Continue <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
-          </form>
+          </div>
         );
 
       case 2:
         return (
-          <form onSubmit={personalForm.handleSubmit((data) => updatePersonalInfoMutation.mutate(data))} className="space-y-6">
+          <div className="space-y-6">
             <div className="space-y-4">
               <div>
                 <Label>Choose Your Theme</Label>
@@ -805,14 +812,14 @@ export default function SetupWizard() {
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>
               <Button 
-                type="submit" 
-                disabled={updatePersonalInfoMutation.isPending}
+                type="button"
+                onClick={() => setCurrentStep(3)}
                 className="flex items-center gap-2"
               >
                 Continue <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
-          </form>
+          </div>
         );
 
       case 3:
