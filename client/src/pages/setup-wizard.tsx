@@ -1076,7 +1076,7 @@ export default function SetupWizard() {
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-blue-600">
-                          {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                          {plan.price === 0 ? 'Free' : `$${(plan.price / 100).toFixed(0)}`}
                         </div>
                         {plan.price > 0 && (
                           <div className="text-sm text-gray-500">per month</div>
