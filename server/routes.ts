@@ -1375,6 +1375,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user personal information and preferences
+  app.put("/api/user/personal-info", async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { name, dateOfBirth, emailOptIn, theme, source, platform } = req.body;
+
+      // Update user personal info and preferences
+      await storage.updateUserPersonalInfo(userId, {
+        name,
+        dateOfBirth,
+        emailOptIn,
+        theme,
+        source,
+        platform,
+      });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error updating personal information:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Complete user onboarding
+  app.put("/api/user/complete-onboarding", async (req, res) => {
+    try {
+      const userId = req.session?.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      await storage.completeUserOnboarding(userId);
+
+      // Update session
+      if (req.session.user) {
+        req.session.user.onboardingCompleted = true;
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error completing onboarding:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Register endpoint
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {

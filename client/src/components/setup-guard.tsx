@@ -21,13 +21,7 @@ export function SetupGuard({ children }: SetupGuardProps) {
       const user = (session as any)?.user;
       const restaurant = (session as any)?.restaurant;
       
-      // Check if user has completed onboarding first
-      if (user && !user.onboardingCompleted) {
-        setLocation('/onboarding');
-        return;
-      }
-      
-      // If onboarding is completed but setup is not, redirect to setup wizard
+      // If setup is not completed (includes onboarding), redirect to setup wizard
       if (restaurant && !restaurant.setupCompleted) {
         setLocation('/setup');
       }
@@ -48,17 +42,7 @@ export function SetupGuard({ children }: SetupGuardProps) {
     return <>{children}</>;
   }
 
-  const user = (session as any)?.user;
   const restaurant = (session as any)?.restaurant;
-  
-  // If onboarding is not completed, don't render children (redirect will happen)
-  if (user && !user.onboardingCompleted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
   
   // If setup is not completed, don't render children (redirect will happen)
   if (restaurant && !restaurant.setupCompleted) {

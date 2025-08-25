@@ -10,17 +10,28 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings, CreditCard, Plus } from "lucide-react";
+import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings, CreditCard, Plus, User, Palette, Globe, Heart } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_your_publishable_key",
 );
+
+const personalInfoSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  dateOfBirth: z.string().optional(),
+  emailOptIn: z.boolean().default(true),
+  theme: z.enum(["light", "dark"]),
+  source: z.string().min(1, "Please tell us how you found us"),
+  platform: z.string().min(1, "Please select your platform type"),
+});
 
 const restaurantDetailsSchema = z.object({
   address: z.string().min(1, "Address is required"),
@@ -75,6 +86,7 @@ const tablesSchema = z.object({
   })).min(1, "At least one table is required"),
 });
 
+type PersonalInfo = z.infer<typeof personalInfoSchema>;
 type RestaurantDetails = z.infer<typeof restaurantDetailsSchema>;
 type OpeningHours = z.infer<typeof openingHoursSchema>;
 type Tables = z.infer<typeof tablesSchema>;
@@ -168,30 +180,42 @@ const PaymentMethodSetup = ({ onSuccess }: { onSuccess: () => void }) => {
 const steps = [
   {
     id: 1,
+    title: "Personal Information",
+    description: "Tell us about yourself and preferences",
+    icon: User,
+  },
+  {
+    id: 2,
+    title: "Theme Selection",
+    description: "Choose your preferred theme",
+    icon: Palette,
+  },
+  {
+    id: 3,
+    title: "Platform & Source",
+    description: "How you found us and your platform",
+    icon: Globe,
+  },
+  {
+    id: 4,
     title: "Restaurant Details",
     description: "Basic information about your restaurant",
     icon: Building,
   },
   {
-    id: 2,
+    id: 5,
     title: "Opening Hours",
     description: "Set your weekly operating hours",
     icon: Clock,
   },
   {
-    id: 3,
-    title: "Tables & Seating",
-    description: "Configure your table layout",
-    icon: Utensils,
-  },
-  {
-    id: 4,
+    id: 6,
     title: "Subscription Plan",
     description: "Choose your billing plan and features",
     icon: CreditCard,
   },
   {
-    id: 5,
+    id: 7,
     title: "Complete Setup",
     description: "Finish and start taking bookings",
     icon: Settings,
@@ -201,7 +225,7 @@ const steps = [
 export default function SetupWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const totalSteps = 5; // Updated to match new step count
+  const totalSteps = 7; // Updated to match new step count
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -218,11 +242,23 @@ export default function SetupWizard() {
   const tenantId = (session as any)?.tenant?.id;
   const restaurantId = (session as any)?.restaurant?.id;
   const restaurant = (session as any)?.restaurant;
+  const user = (session as any)?.user;
+
+  // Check if user has completed onboarding
+  const isOnboardingCompleted = user?.onboardingCompleted;
+  
+  // Auto-advance past onboarding steps if already completed
+  useEffect(() => {
+    if (isOnboardingCompleted && currentStep <= 3) {
+      setCurrentStep(4);
+      setCompletedSteps(prev => [...prev, 1, 2, 3]);
+    }
+  }, [isOnboardingCompleted, currentStep]);
 
   // Fetch subscription plans for billing step
   const { data: plans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
-    enabled: currentStep === 4, // Only fetch when on billing step
+    enabled: currentStep === 6, // Only fetch when on billing step
   });
 
   // Auto-select current plan or free plan when plans are loaded
@@ -266,6 +302,32 @@ export default function SetupWizard() {
   }, [selectedPlanId, plans, session]);
 
   // Form configurations
+  const personalForm = useForm<PersonalInfo>({
+    resolver: zodResolver(personalInfoSchema),
+    defaultValues: {
+      name: "",
+      dateOfBirth: "",
+      emailOptIn: true,
+      theme: "light",
+      source: "",
+      platform: "",
+    },
+  });
+
+  // Initialize personal form with user data
+  useEffect(() => {
+    if (user) {
+      personalForm.reset({
+        name: user.name || "",
+        dateOfBirth: user.dateOfBirth || "",
+        emailOptIn: user.emailOptIn ?? true,
+        theme: user.preferences?.theme || "light",
+        source: user.preferences?.source || "",
+        platform: user.preferences?.platform || "",
+      });
+    }
+  }, [user, personalForm]);
+
   const restaurantForm = useForm<RestaurantDetails>({
     resolver: zodResolver(restaurantDetailsSchema),
     defaultValues: {
@@ -421,6 +483,28 @@ export default function SetupWizard() {
   });
 
   // Mutations
+  const updatePersonalInfoMutation = useMutation({
+    mutationFn: async (data: PersonalInfo) => {
+      const response = await apiRequest("PUT", "/api/user/personal-info", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      setCompletedSteps(prev => [...prev, 1, 2, 3]);
+      toast({ title: "Personal information saved!" });
+      setCurrentStep(4);
+      
+      // Mark onboarding as completed
+      apiRequest("PUT", "/api/user/complete-onboarding", {});
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error saving personal information",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateRestaurantMutation = useMutation({
     mutationFn: async (data: RestaurantDetails) => {
       console.log("Submitting restaurant data:", data);
@@ -431,9 +515,9 @@ export default function SetupWizard() {
     },
     onSuccess: (data) => {
       console.log("Restaurant details saved successfully:", data);
-      setCompletedSteps(prev => [...prev, 1]);
+      setCompletedSteps(prev => [...prev, 4]);
       toast({ title: "Restaurant details saved!" });
-      setCurrentStep(2);
+      setCurrentStep(5);
     },
     onError: (error: any) => {
       console.error("Error saving restaurant details:", error);
@@ -462,9 +546,9 @@ export default function SetupWizard() {
     },
     onSuccess: (data) => {
       console.log("Opening hours saved successfully:", data);
-      setCompletedSteps(prev => [...prev, 2]);
+      setCompletedSteps(prev => [...prev, 5]);
       toast({ title: "Opening hours saved!" });
-      setCurrentStep(3);
+      setCurrentStep(6);
     },
     onError: (error: any) => {
       console.error("Error saving opening hours:", error);
@@ -509,9 +593,9 @@ export default function SetupWizard() {
     },
     onSuccess: (data) => {
       console.log("Tables configured successfully:", data);
-      setCompletedSteps(prev => [...prev, 3]);
+      setCompletedSteps(prev => [...prev, 6]);
       toast({ title: "Tables configured successfully!" });
-      setCurrentStep(4);
+      setCurrentStep(7);
     },
     onError: (error: any) => {
       console.error("Error saving tables:", error);
@@ -531,9 +615,9 @@ export default function SetupWizard() {
       });
     },
     onSuccess: () => {
-      setCompletedSteps(prev => [...prev, 4]);
+      setCompletedSteps(prev => [...prev, 7]);
       toast({ title: "Booking settings saved!" });
-      setCurrentStep(5);
+      setCurrentStep(8);
     },
     onError: (error: any) => {
       toast({
@@ -552,9 +636,9 @@ export default function SetupWizard() {
       });
     },
     onSuccess: () => {
-      setCompletedSteps(prev => [...prev, 5]);
+      setCompletedSteps(prev => [...prev, 8]);
       toast({ title: "Notification settings saved!" });
-      setCurrentStep(6);
+      setCurrentStep(9);
     },
     onError: (error: any) => {
       toast({
@@ -634,6 +718,181 @@ export default function SetupWizard() {
     switch (currentStep) {
       case 1:
         return (
+          <form onSubmit={personalForm.handleSubmit((data) => updatePersonalInfoMutation.mutate(data))} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  {...personalForm.register("name")}
+                  placeholder="Enter your full name"
+                />
+                {personalForm.formState.errors.name && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {personalForm.formState.errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="dateOfBirth">Date of Birth (Optional)</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  {...personalForm.register("dateOfBirth")}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="emailOptIn"
+                  checked={personalForm.watch("emailOptIn")}
+                  onCheckedChange={(checked) => personalForm.setValue("emailOptIn", checked as boolean)}
+                />
+                <Label htmlFor="emailOptIn">I'd like to receive updates and news via email</Label>
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <div /> {/* Empty div for spacing */}
+              <Button 
+                type="submit" 
+                disabled={updatePersonalInfoMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                Continue <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </form>
+        );
+
+      case 2:
+        return (
+          <form onSubmit={personalForm.handleSubmit((data) => updatePersonalInfoMutation.mutate(data))} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <Label>Choose Your Theme</Label>
+                <RadioGroup
+                  value={personalForm.watch("theme")}
+                  onValueChange={(value) => personalForm.setValue("theme", value as "light" | "dark")}
+                  className="grid grid-cols-2 gap-4 mt-2"
+                >
+                  <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-gray-50">
+                    <RadioGroupItem value="light" id="light" />
+                    <Label htmlFor="light" className="flex-1">
+                      <div className="font-medium">Light Theme</div>
+                      <div className="text-sm text-gray-500">Clean and bright interface</div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-gray-50">
+                    <RadioGroupItem value="dark" id="dark" />
+                    <Label htmlFor="dark" className="flex-1">
+                      <div className="font-medium">Dark Theme</div>
+                      <div className="text-sm text-gray-500">Easy on the eyes</div>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setCurrentStep(1)}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={updatePersonalInfoMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                Continue <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </form>
+        );
+
+      case 3:
+        return (
+          <form onSubmit={personalForm.handleSubmit((data) => updatePersonalInfoMutation.mutate(data))} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="source">How did you hear about us?</Label>
+                <Select
+                  value={personalForm.watch("source")}
+                  onValueChange={(value) => personalForm.setValue("source", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="google">Google Search</SelectItem>
+                    <SelectItem value="social">Social Media</SelectItem>
+                    <SelectItem value="referral">Friend/Colleague Referral</SelectItem>
+                    <SelectItem value="advertisement">Advertisement</SelectItem>
+                    <SelectItem value="blog">Blog/Article</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {personalForm.formState.errors.source && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {personalForm.formState.errors.source.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="platform">What type of establishment do you run?</Label>
+                <Select
+                  value={personalForm.watch("platform")}
+                  onValueChange={(value) => personalForm.setValue("platform", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your platform type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="restaurant">Restaurant</SelectItem>
+                    <SelectItem value="cafe">Café</SelectItem>
+                    <SelectItem value="bar">Bar/Pub</SelectItem>
+                    <SelectItem value="hotel">Hotel Restaurant</SelectItem>
+                    <SelectItem value="catering">Catering Service</SelectItem>
+                    <SelectItem value="food-truck">Food Truck</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {personalForm.formState.errors.platform && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {personalForm.formState.errors.platform.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setCurrentStep(2)}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={updatePersonalInfoMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                Complete Onboarding <Heart className="w-4 h-4" />
+              </Button>
+            </div>
+          </form>
+        );
+
+      case 4:
+        return (
           <form onSubmit={restaurantForm.handleSubmit(
             (data) => {
               console.log("Form data being submitted:", data);
@@ -709,7 +968,7 @@ export default function SetupWizard() {
           </form>
         );
 
-      case 2:
+      case 5:
         return (
           <form onSubmit={hoursForm.handleSubmit((data) => saveOpeningHoursMutation.mutate(data))} className="space-y-4">
             {Object.entries(hoursForm.getValues()).map(([day, hours]) => (
@@ -751,7 +1010,7 @@ export default function SetupWizard() {
             ))}
 
             <div className="flex space-x-4">
-              <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
+              <Button type="button" variant="outline" onClick={() => setCurrentStep(4)}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
@@ -763,76 +1022,7 @@ export default function SetupWizard() {
           </form>
         );
 
-      case 3:
-        return (
-          <form onSubmit={tablesForm.handleSubmit((data) => saveTablesMutation.mutate(data))} className="space-y-4">
-            <div className="space-y-4">
-              {tablesForm.watch("tables").map((table, index) => (
-                <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <Label>Table Number</Label>
-                    <Input
-                      value={table.tableNumber}
-                      onChange={(e) => 
-                        tablesForm.setValue(`tables.${index}.tableNumber`, e.target.value)
-                      }
-                      placeholder="1"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Label>Capacity</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={table.capacity}
-                      onChange={(e) => 
-                        tablesForm.setValue(`tables.${index}.capacity`, parseInt(e.target.value) || 1)
-                      }
-                      placeholder="4"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Label>Room/Area</Label>
-                    <Input
-                      value={table.room || ""}
-                      onChange={(e) => 
-                        tablesForm.setValue(`tables.${index}.room`, e.target.value)
-                      }
-                      placeholder="Main Dining"
-                    />
-                  </div>
-                  {tablesForm.watch("tables").length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeTable(index)}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <Button type="button" variant="outline" onClick={addTable} className="w-full">
-              Add Another Table
-            </Button>
-
-            <div className="flex space-x-4">
-              <Button type="button" variant="outline" onClick={() => setCurrentStep(2)}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <Button type="submit" className="flex-1" disabled={saveTablesMutation.isPending}>
-                {saveTablesMutation.isPending ? "Saving..." : "Save & Continue"}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </form>
-        );
-
-      case 4:
+      case 6:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -954,8 +1144,8 @@ export default function SetupWizard() {
                   }
 
                   // Continue to next step
-                  setCompletedSteps([...completedSteps, 4]);
-                  setCurrentStep(5);
+                  setCompletedSteps([...completedSteps, 6]);
+                  setCurrentStep(7);
                   toast({
                     title: "Plan configured!",
                     description: "Your subscription plan has been set up successfully.",
@@ -980,7 +1170,7 @@ export default function SetupWizard() {
           </div>
         );
 
-      case 5:
+      case 7:
         return (
           <div className="text-center space-y-6">
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
@@ -993,10 +1183,28 @@ export default function SetupWizard() {
                 You can always modify these settings later from your dashboard.
               </p>
             </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <h4 className="font-medium text-amber-900 mb-2 flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Next Steps
+              </h4>
+              <p className="text-sm text-amber-700 mb-3">
+                Don't forget to set up your tables and seating arrangements after completing this setup. You can do this from your dashboard under "Restaurant Settings" → "Tables".
+              </p>
+              <p className="text-sm text-amber-700">
+                This will allow customers to see available tables when making reservations.
+              </p>
+            </div>
+            
             <div className="space-y-4">
               <div className="text-left space-y-2">
                 <h4 className="font-medium">What's been set up:</h4>
                 <ul className="space-y-1 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                    Personal preferences and onboarding
+                  </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
                     Restaurant contact information
@@ -1004,10 +1212,6 @@ export default function SetupWizard() {
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
                     Operating hours configured
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
-                    Tables and seating layout
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
