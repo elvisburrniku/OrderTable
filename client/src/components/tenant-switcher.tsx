@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Building2, Plus, Crown } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -74,6 +74,30 @@ export function TenantSwitcher({
   const { data: tenants, isLoading } = useQuery<Tenant[]>({
     queryKey: ["/api/user/tenants"],
   });
+
+  // Memoize expensive calculations to prevent infinite loops
+  const { currentTenant, allRestaurants, currentRestaurant, canCreateRestaurant } = useMemo(() => {
+    if (!tenants || tenants.length === 0) {
+      return {
+        currentTenant: null,
+        allRestaurants: [],
+        currentRestaurant: null,
+        canCreateRestaurant: false,
+      };
+    }
+
+    const tenant = tenants.find((t) => t.id === currentTenantId) || null;
+    const restaurants = tenants.flatMap((t) => t.restaurants || []);
+    const restaurant = restaurants.find((r) => r?.id === currentRestaurantId) || null;
+    const canCreate = tenant && tenant.isOwner && (tenant.restaurants?.length || 0) < tenant.maxRestaurants;
+
+    return {
+      currentTenant: tenant,
+      allRestaurants: restaurants,
+      currentRestaurant: restaurant,
+      canCreateRestaurant: canCreate,
+    };
+  }, [tenants, currentTenantId, currentRestaurantId]);
 
   const form = useForm<CreateRestaurantData>({
     resolver: zodResolver(createRestaurantSchema),
@@ -156,17 +180,6 @@ export function TenantSwitcher({
   const onSubmit = (data: CreateRestaurantData) => {
     createRestaurantMutation.mutate(data);
   };
-
-  const currentTenant = tenants?.find((t) => t.id === currentTenantId);
-  const allRestaurants = tenants?.flatMap((t) => t.restaurants || []) || [];
-  const currentRestaurant = allRestaurants.find(
-    (r) => r?.id === currentRestaurantId,
-  );
-
-  const canCreateRestaurant =
-    currentTenant &&
-    currentTenant.isOwner &&
-    currentTenant.restaurants.length < currentTenant.maxRestaurants;
 
   if (isLoading) {
     return <div className="w-[200px] h-10 bg-muted animate-pulse rounded-md" />;
@@ -258,7 +271,7 @@ export function TenantSwitcher({
                 <span className="block mt-2 text-sm">
                   You can create{" "}
                   {currentTenant.maxRestaurants -
-                    currentTenant.restaurants.length}{" "}
+                    (currentTenant.restaurants?.length || 0)}{" "}
                   more restaurant(s).
                 </span>
               )}
