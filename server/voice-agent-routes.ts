@@ -15,6 +15,7 @@ import {
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { errorHandler } from './error-handler';
 import { voiceAgentRequestService } from './voice-agent-request-service';
+import { requirePermission } from './permissions-middleware';
 
 const router = Router();
 
@@ -320,7 +321,7 @@ router.get('/api/tenants/:tenantId/voice-credits', validateTenant, async (req, r
 // =====================================
 
 // Submit voice agent request (Restaurant)
-router.post('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request', validateTenant, async (req, res) => {
+router.post('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request', validateTenant, requirePermission('access_voice_agents'), async (req, res) => {
   try {
     const tenantId = parseInt(req.params.tenantId);
     const restaurantId = parseInt(req.params.restaurantId);
@@ -360,7 +361,7 @@ router.post('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/reques
 });
 
 // Get voice agent request status (Restaurant)
-router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request', validateTenant, async (req, res) => {
+router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request', validateTenant, requirePermission('access_voice_agents'), async (req, res) => {
   try {
     const restaurantId = parseInt(req.params.restaurantId);
     
@@ -435,7 +436,7 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/request
 });
 
 // Get credit balance and transaction history (Restaurant)
-router.get('/api/tenants/:tenantId/voice-agent/credits', validateTenant, async (req, res) => {
+router.get('/api/tenants/:tenantId/voice-agent/credits', validateTenant, requirePermission('access_voice_agents'), async (req, res) => {
   try {
     const tenantId = parseInt(req.params.tenantId);
     
@@ -453,7 +454,7 @@ router.get('/api/tenants/:tenantId/voice-agent/credits', validateTenant, async (
 });
 
 // Top up credits (Restaurant) - Creates Stripe payment intent
-router.post('/api/tenants/:tenantId/voice-agent/credits/topup', validateTenant, async (req, res) => {
+router.post('/api/tenants/:tenantId/voice-agent/credits/topup', validateTenant, requirePermission('access_voice_agents'), async (req, res) => {
   try {
     const tenantId = parseInt(req.params.tenantId);
     
@@ -489,7 +490,7 @@ router.post('/api/tenants/:tenantId/voice-agent/credits/topup', validateTenant, 
 });
 
 // Get call logs for restaurant (Restaurant)
-router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/call-logs', validateTenant, async (req, res) => {
+router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/call-logs', validateTenant, requirePermission('access_voice_agents'), async (req, res) => {
   try {
     const restaurantId = parseInt(req.params.restaurantId);
     const page = parseInt(req.query.page as string) || 1;
@@ -550,6 +551,7 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/call-lo
 // Simplified voice agent management - Get status and phone number
 router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent-simple', 
   validateTenant,
+  requirePermission('access_voice_agents'),
   async (req: Request, res: Response) => {
     try {
       const { tenantId, restaurantId } = req.params;
@@ -618,6 +620,7 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent-simple'
 // Simplified voice agent toggle - Activate/deactivate
 router.post('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent-toggle',
   validateTenant,
+  requirePermission('manage_voice_agents'),
   async (req: Request, res: Response) => {
     try {
       const { tenantId, restaurantId } = req.params;

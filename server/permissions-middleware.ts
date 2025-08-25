@@ -17,6 +17,7 @@ export const PERMISSIONS = {
   ACCESS_INTEGRATIONS: "access_integrations",
   ACCESS_SETTINGS: "access_settings",
   ACCESS_FLOOR_PLAN: "access_floor_plan",
+  ACCESS_VOICE_AGENTS: "access_voice_agents",
 
   // Booking management
   VIEW_BOOKINGS: "view_bookings",
@@ -62,6 +63,10 @@ export const PERMISSIONS = {
   // Integrations
   VIEW_INTEGRATIONS: "view_integrations",
   MANAGE_INTEGRATIONS: "manage_integrations",
+
+  // Voice Agents
+  VIEW_VOICE_AGENTS: "view_voice_agents",
+  MANAGE_VOICE_AGENTS: "manage_voice_agents",
 } as const;
 
 // Role-based permission matrix
@@ -100,6 +105,9 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.VIEW_REPORTS,
     PERMISSIONS.VIEW_NOTIFICATIONS,
     PERMISSIONS.VIEW_INTEGRATIONS,
+    PERMISSIONS.ACCESS_VOICE_AGENTS,
+    PERMISSIONS.VIEW_VOICE_AGENTS,
+    PERMISSIONS.MANAGE_VOICE_AGENTS,
   ],
   agent: [
     PERMISSIONS.ACCESS_DASHBOARD,
@@ -555,6 +563,7 @@ export function getAllPermissions() {
       { key: PERMISSIONS.ACCESS_NOTIFICATIONS, label: "Notifications" },
       { key: PERMISSIONS.ACCESS_INTEGRATIONS, label: "Integrations" },
       { key: PERMISSIONS.ACCESS_SETTINGS, label: "Settings" },
+      { key: PERMISSIONS.ACCESS_VOICE_AGENTS, label: "Voice Agents" },
     ],
     features: [
       { key: PERMISSIONS.VIEW_BOOKINGS, label: "View Bookings" },
@@ -580,6 +589,8 @@ export function getAllPermissions() {
       { key: PERMISSIONS.MANAGE_NOTIFICATIONS, label: "Manage Notifications" },
       { key: PERMISSIONS.VIEW_INTEGRATIONS, label: "View Integrations" },
       { key: PERMISSIONS.MANAGE_INTEGRATIONS, label: "Manage Integrations" },
+      { key: PERMISSIONS.VIEW_VOICE_AGENTS, label: "View Voice Agents" },
+      { key: PERMISSIONS.MANAGE_VOICE_AGENTS, label: "Manage Voice Agents" },
     ],
   };
 }
