@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Phone, Clock, AlertTriangle, CheckCircle, XCircle, CreditCard, Euro, Copy, History, Play } from 'lucide-react';
+import { Phone, Clock, AlertTriangle, CheckCircle, XCircle, CreditCard, Euro, Copy, History, Play, Mic, Settings } from 'lucide-react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -41,7 +41,7 @@ export default function VoiceAgentRequest() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'request' | 'credits' | 'call-logs'>('request');
+  const [activeTab, setActiveTab] = useState<'request' | 'credits' | 'call-logs' | 'elevenlabs'>('request');
   const [callLogsPage, setCallLogsPage] = useState(1);
 
   // Query for existing request
@@ -166,7 +166,7 @@ export default function VoiceAgentRequest() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         <Button 
           variant={activeTab === 'request' ? 'default' : 'outline'}
           onClick={() => setActiveTab('request')}
@@ -174,6 +174,14 @@ export default function VoiceAgentRequest() {
         >
           <Phone className="w-4 h-4" />
           Voice Agent Request
+        </Button>
+        <Button 
+          variant={activeTab === 'elevenlabs' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('elevenlabs')}
+          className="flex items-center gap-2"
+        >
+          <Mic className="w-4 h-4" />
+          ElevenLabs Setup
         </Button>
         <Button 
           variant={activeTab === 'credits' ? 'default' : 'outline'}
@@ -581,6 +589,10 @@ export default function VoiceAgentRequest() {
         </div>
       )}
 
+      {activeTab === 'elevenlabs' && (
+        <ElevenLabsConfig tenantId={tenantId} restaurantId={restaurantId} />
+      )}
+
       {activeTab === 'call-logs' && (
         <div className="space-y-6">
           {/* Call Statistics */}
@@ -754,6 +766,229 @@ export default function VoiceAgentRequest() {
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+// ElevenLabs Configuration Component
+function ElevenLabsConfig({ tenantId, restaurantId }: { tenantId: string; restaurantId: string }) {
+  const [voices, setVoices] = useState<Array<{ voice_id: string; name: string; category: string }>>([]);
+  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('');
+  const [customGreeting, setCustomGreeting] = useState('');
+  const [customClosing, setCustomClosing] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch voice agent details
+  const { data: voiceAgentData, isLoading: isLoadingAgent } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-agent`],
+    enabled: !!tenantId && !!restaurantId,
+  });
+
+  // Load voices on component mount
+  useEffect(() => {
+    const loadVoices = async () => {
+      setIsLoadingVoices(true);
+      try {
+        const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-voices`);
+        if (response.ok) {
+          const data = await response.json();
+          setVoices(data.voices || []);
+        }
+      } catch (error) {
+        console.error('Failed to load voices:', error);
+      } finally {
+        setIsLoadingVoices(false);
+      }
+    };
+    loadVoices();
+  }, [tenantId, restaurantId]);
+
+  // Set form values when agent data loads
+  useEffect(() => {
+    if (voiceAgentData?.voiceAgent) {
+      setSelectedVoice(voiceAgentData.voiceAgent.elevenlabsVoiceId || '');
+      setCustomGreeting(voiceAgentData.voiceAgent.restaurantGreeting || '');
+      setCustomClosing(voiceAgentData.voiceAgent.restaurantClosingMessage || '');
+    }
+  }, [voiceAgentData]);
+
+  const handleCreateOrUpdate = async () => {
+    if (!selectedVoice) {
+      toast({
+        title: "Voice Required",
+        description: "Please select a voice for your AI agent",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const payload = {
+        voiceId: selectedVoice,
+        language: 'en',
+        customGreeting: customGreeting || undefined,
+        customClosingMessage: customClosing || undefined
+      };
+
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-agent`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (response.success) {
+        toast({
+          title: "ElevenLabs Agent Configured",
+          description: "Your AI voice agent has been successfully configured with ElevenLabs"
+        });
+        queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-agent`] });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Configuration Failed",
+        description: error.message || "Failed to configure ElevenLabs agent",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  if (isLoadingAgent) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mic className="w-5 h-5" />
+            ElevenLabs Voice Configuration
+          </CardTitle>
+          <CardDescription>
+            Configure your AI voice agent with ElevenLabs for natural-sounding conversations. 
+            This provides a more advanced alternative to the standard Synthflow integration.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Voice Selection */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Select Voice</label>
+            {isLoadingVoices ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                Loading available voices...
+              </div>
+            ) : (
+              <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an AI voice" />
+                </SelectTrigger>
+                <SelectContent>
+                  {voices.map((voice) => (
+                    <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                      {voice.name} ({voice.category})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Choose a voice that matches your restaurant's personality and target audience.
+            </p>
+          </div>
+
+          {/* Custom Greeting */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Custom Greeting (Optional)</label>
+            <Textarea
+              placeholder="Thank you for calling [Restaurant Name], this is the reservations assistant. How may I help you today?"
+              value={customGreeting}
+              onChange={(e) => setCustomGreeting(e.target.value)}
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use the default greeting template. Use [Restaurant Name] as a placeholder.
+            </p>
+          </div>
+
+          {/* Custom Closing */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Custom Closing Message (Optional)</label>
+            <Textarea
+              placeholder="Thank you for calling [Restaurant Name]. We look forward to serving you!"
+              value={customClosing}
+              onChange={(e) => setCustomClosing(e.target.value)}
+              rows={2}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use the default closing message template.
+            </p>
+          </div>
+
+          {/* Action Button */}
+          <div className="flex gap-3 pt-4">
+            <Button 
+              onClick={handleCreateOrUpdate}
+              disabled={isCreating || !selectedVoice}
+              className="flex-1"
+            >
+              {isCreating ? 'Configuring...' : 
+               voiceAgentData?.voiceAgent?.elevenlabsAgentId ? 'Update ElevenLabs Agent' : 'Create ElevenLabs Agent'}
+            </Button>
+          </div>
+
+          {/* Current Status */}
+          {voiceAgentData?.voiceAgent && (
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+              <h4 className="font-medium mb-2">Current Configuration</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Provider:</span>
+                  <span>{voiceAgentData.voiceAgent.provider || 'synthflow'}</span>
+                </div>
+                {voiceAgentData.voiceAgent.elevenlabsAgentId && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">ElevenLabs Agent ID:</span>
+                    <span className="font-mono text-xs">{voiceAgentData.voiceAgent.elevenlabsAgentId}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className={voiceAgentData.voiceAgent.isActive ? 'text-green-600' : 'text-orange-600'}>
+                    {voiceAgentData.voiceAgent.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Information Box */}
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Settings className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">About ElevenLabs Integration</h4>
+                <ul className="space-y-1 text-blue-700 dark:text-blue-300">
+                  <li>• Natural, human-like voice conversations</li>
+                  <li>• Advanced speech recognition and response</li>
+                  <li>• Automatic reservation booking from voice calls</li>
+                  <li>• 24/7 customer support availability</li>
+                  <li>• Customizable greeting and closing messages</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -2172,6 +2172,17 @@ export const voiceAgents = pgTable("voice_agents", {
   maxCallsPerMonth: integer("max_calls_per_month").default(100),
   totalUsageCost: decimal("total_usage_cost", { precision: 10, scale: 4 }).default("0"),
   lastBilledAt: timestamp("last_billed_at"),
+  // Voice provider configuration
+  provider: varchar("provider", { length: 20 }).default("synthflow"), // synthflow | elevenlabs
+  // Synthflow configuration  
+  synthflowAgentId: text("synthflow_agent_id"),
+  synthflowWebhookUrl: text("synthflow_webhook_url"),
+  // ElevenLabs configuration
+  elevenlabsAgentId: text("elevenlabs_agent_id"),
+  elevenlabsVoiceId: text("elevenlabs_voice_id"),
+  elevenlabsWebhookUrl: text("elevenlabs_webhook_url"),
+  restaurantGreeting: text("restaurant_greeting"),
+  restaurantClosingMessage: text("restaurant_closing_message"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
@@ -2201,6 +2212,7 @@ export const voiceCallLogs = pgTable("voice_call_logs", {
   bookingId: integer("booking_id").references(() => bookings.id), // If a booking was created
   twilioCallSid: text("twilio_call_sid").unique(),
   synthflowSessionId: text("synthflow_session_id"),
+  elevenlabsConversationId: text("elevenlabs_conversation_id"),
   callerPhone: text("caller_phone").notNull(),
   callDirection: varchar("call_direction", { length: 20 }).default("inbound"), // inbound, outbound
   callStatus: varchar("call_status", { length: 30 }), // initiated, ringing, in-progress, completed, failed, busy, no-answer

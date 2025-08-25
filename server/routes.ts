@@ -75,6 +75,7 @@ import { setupSSO } from "./sso-auth";
 import { SubscriptionService } from "./subscription-service";
 import voiceAgentRoutes from "./voice-agent-routes";
 import synthflowRoutes from "./synthflow-routes";
+import { elevenLabsRouter } from "./elevenlabs-routes";
 import { CancellationReminderService } from "./cancellation-reminder-service";
 import { GoogleCalendarService } from "./google-calendar-service";
 import { ConflictDetector } from "./conflict-detector";
@@ -16948,6 +16949,9 @@ NEXT STEPS:
 
   // Register synthflow integration routes
   app.use('/api/synthflow', synthflowRoutes);
+
+  // Register ElevenLabs integration routes
+  app.use('/api', elevenLabsRouter);
 
   // Register Twilio integration routes for SIP trunking
   const twilioIntegrationRoutes = (await import('./twilio-integration-routes')).default;
