@@ -281,8 +281,12 @@ Always end with: "${closing}"
 
   // Get list of available voices
   async getVoices(): Promise<Array<{ voice_id: string; name: string; category: string; }>> {
-    if (!this.apiKey) {
-      throw new Error('ElevenLabs API key not configured');
+    if (!this.apiKey || this.apiKey === 'your_elevenlabs_api_key_here') {
+      console.warn('ElevenLabs API key not properly configured');
+      return [
+        { voice_id: 'demo-voice-1', name: 'Demo Voice 1 (Configure API Key)', category: 'demo' },
+        { voice_id: 'demo-voice-2', name: 'Demo Voice 2 (Configure API Key)', category: 'demo' }
+      ];
     }
 
     try {
@@ -295,6 +299,16 @@ Always end with: "${closing}"
 
       if (!response.ok) {
         const error = await response.text();
+        console.error(`ElevenLabs API error: ${response.status} - ${error}`);
+        
+        // Return demo voices if API key is invalid
+        if (response.status === 401) {
+          return [
+            { voice_id: 'demo-voice-1', name: 'Demo Voice 1 (Invalid API Key)', category: 'demo' },
+            { voice_id: 'demo-voice-2', name: 'Demo Voice 2 (Invalid API Key)', category: 'demo' }
+          ];
+        }
+        
         throw new Error(`ElevenLabs API error: ${response.status} - ${error}`);
       }
 
@@ -303,7 +317,12 @@ Always end with: "${closing}"
 
     } catch (error) {
       console.error('Error getting ElevenLabs voices:', error);
-      throw error;
+      
+      // Return demo voices as fallback
+      return [
+        { voice_id: 'demo-voice-1', name: 'Demo Voice 1 (Error)', category: 'demo' },
+        { voice_id: 'demo-voice-2', name: 'Demo Voice 2 (Error)', category: 'demo' }
+      ];
     }
   }
 

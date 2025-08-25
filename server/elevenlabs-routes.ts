@@ -69,11 +69,25 @@ router.get('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-voices',
       }
 
       const voices = await elevenLabsService.getVoices();
-      res.json({ voices });
+      
+      // Check if we're returning demo voices due to API issues
+      const isDemoMode = voices.some(voice => voice.category === 'demo');
+      
+      res.json({ 
+        voices,
+        isDemoMode,
+        message: isDemoMode ? 'ElevenLabs API key not configured. Please add your API key to environment variables.' : null
+      });
 
     } catch (error) {
       console.error('Error fetching ElevenLabs voices:', error);
-      res.status(500).json({ error: 'Failed to fetch voices' });
+      res.status(200).json({ 
+        voices: [
+          { voice_id: 'fallback-voice', name: 'Fallback Voice (Service Unavailable)', category: 'fallback' }
+        ],
+        isDemoMode: true,
+        error: 'ElevenLabs service temporarily unavailable'
+      });
     }
   }
 );
@@ -262,7 +276,17 @@ router.get('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-agent',
       const { tenantId, restaurantId } = req.params;
 
       const [voiceAgent] = await db
-        .select()
+        .select({
+          id: voiceAgents.id,
+          tenantId: voiceAgents.tenantId,
+          restaurantId: voiceAgents.restaurantId,
+          isActive: voiceAgents.isActive,
+          language: voiceAgents.language,
+          phoneNumberId: voiceAgents.phoneNumberId,
+          maxCallsPerMonth: voiceAgents.maxCallsPerMonth,
+          createdAt: voiceAgents.createdAt,
+          updatedAt: voiceAgents.updatedAt
+        })
         .from(voiceAgents)
         .where(and(
           eq(voiceAgents.restaurantId, parseInt(restaurantId)),
