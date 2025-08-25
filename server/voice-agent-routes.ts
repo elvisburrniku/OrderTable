@@ -547,4 +547,122 @@ router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent/call-lo
   }
 });
 
+// Simplified voice agent management - Get status and phone number
+router.get('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent-simple', 
+  validateTenant,
+  async (req: Request, res: Response) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+
+      // Get voice agent if exists
+      const voiceAgent = await db.select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.tenantId, parseInt(tenantId)),
+          eq(voiceAgents.restaurantId, parseInt(restaurantId))
+        ))
+        .limit(1);
+
+      // Get phone number if agent exists
+      let phoneNumber = null;
+      if (voiceAgent.length > 0 && voiceAgent[0].twilioPhoneNumberSid) {
+        const phoneData = await db.select()
+          .from(phoneNumbers)
+          .where(eq(phoneNumbers.sid, voiceAgent[0].twilioPhoneNumberSid))
+          .limit(1);
+        
+        if (phoneData.length > 0) {
+          phoneNumber = phoneData[0].phoneNumber;
+        }
+      }
+
+      // Get today's stats if agent is active
+      let stats = null;
+      if (voiceAgent.length > 0 && voiceAgent[0].isActive) {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Get call count for today
+        const callStats = await db.select({
+          callsToday: sql<number>`COUNT(*)`.as('callsToday')
+        })
+        .from(voiceCallLogs)
+        .where(and(
+          eq(voiceCallLogs.voiceAgentId, voiceAgent[0].id),
+          sql`DATE(${voiceCallLogs.createdAt}) = ${today}`
+        ));
+
+        stats = {
+          callsToday: callStats[0]?.callsToday || 0,
+          bookingsToday: 0 // Would need to query bookings table with source = 'voice_agent'
+        };
+      }
+
+      res.json({
+        success: true,
+        isActive: voiceAgent.length > 0 ? voiceAgent[0].isActive : false,
+        phoneNumber,
+        stats,
+        hasAgent: voiceAgent.length > 0
+      });
+
+    } catch (error: any) {
+      console.error('Error fetching voice agent simple status:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch voice agent status' 
+      });
+    }
+  }
+);
+
+// Simplified voice agent toggle - Activate/deactivate
+router.post('/api/tenants/:tenantId/restaurants/:restaurantId/voice-agent-toggle',
+  validateTenant,
+  async (req: Request, res: Response) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const { activate } = req.body;
+
+      // Get existing voice agent
+      const existingAgent = await db.select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.tenantId, parseInt(tenantId)),
+          eq(voiceAgents.restaurantId, parseInt(restaurantId))
+        ))
+        .limit(1);
+
+      if (existingAgent.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Voice agent not found. Please contact support to set up your AI assistant.'
+        });
+      }
+
+      // Update the agent status
+      await db.update(voiceAgents)
+        .set({
+          isActive: activate,
+          updatedAt: new Date()
+        })
+        .where(eq(voiceAgents.id, existingAgent[0].id));
+
+      console.log(`Voice agent ${activate ? 'activated' : 'deactivated'} for restaurant ${restaurantId}`);
+
+      res.json({
+        success: true,
+        isActive: activate,
+        message: `Voice agent ${activate ? 'activated' : 'deactivated'} successfully`
+      });
+
+    } catch (error: any) {
+      console.error('Error toggling voice agent:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update voice agent status'
+      });
+    }
+  }
+);
+
 export default router;
