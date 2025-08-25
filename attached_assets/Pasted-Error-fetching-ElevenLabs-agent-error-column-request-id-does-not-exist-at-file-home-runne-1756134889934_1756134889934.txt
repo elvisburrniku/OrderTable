@@ -1,0 +1,53 @@
+Error fetching ElevenLabs agent: error: column "request_id" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async <anonymous> (/home/runner/workspace/server/elevenlabs-routes.ts:264:28) {
+  length: 110,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '44',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+3:14:27 PM [express] GET /api/tenants/3/restaurants/12/elevenlabs-agent 500 in 735ms :: {"error":"Fa…
+Error getting ElevenLabs voices: Error: ElevenLabs API error: 401 - {"detail":{"status":"invalid_authorization_header","message":"Provided authorization header was invalid."}}
+    at ElevenLabsService.getVoices (/home/runner/workspace/server/elevenlabs-service.ts:298:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/elevenlabs-routes.ts:71:22)
+Error fetching ElevenLabs voices: Error: ElevenLabs API error: 401 - {"detail":{"status":"invalid_authorization_header","message":"Provided authorization header was invalid."}}
+    at ElevenLabsService.getVoices (/home/runner/workspace/server/elevenlabs-service.ts:298:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/elevenlabs-routes.ts:71:22)
+3:14:27 PM [express] GET /api/tenants/3/restaurants/12/elevenlabs-voices 500 in 775ms :: {"error":"F…
+Checking for completed bookings requiring feedback requests...
+Found 0 completed bookings for restaurant The good place 1999
+Found 0 completed bookings for restaurant The best restaurant
+Found 0 completed bookings for restaurant The Good place
+Found 0 completed bookings for restaurant Bella Vue
+Found 0 completed bookings for restaurant Liridoni Restaurant
+Found 0 completed bookings for restaurant Elvis Burrniku
+Found 0 completed bookings for restaurant Elvis Burrniku
+Found 0 completed bookings for restaurant Te Mali
+Found 0 completed bookings for restaurant Albani Restaurant
+Found 0 completed bookings for restaurant Albani Restaurant 2
+Found 0 completed bookings for restaurant Elvis Burrniku
+Found 0 completed bookings for restaurant The good place
+Found 0 completed bookings for restaurant Elvis Burrniku
+Found 0 completed bookings for restaurant Elvis Burrniku
+Found 0 completed bookings for restaurant Elvis Burrniku
+Found 0 completed bookings for restaurant Elvis Restaurant
+Found 0 completed bookings for restaurant liridon pidhuqiki
+Found 0 completed bookings for restaurant TROFTA
+Found 0 completed bookings for restaurant The good place23
