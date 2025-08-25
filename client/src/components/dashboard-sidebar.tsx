@@ -346,9 +346,11 @@ export default function DashboardSidebar({
       requiredPermission: "access_notifications",
     },
     {
-      name: "Voice Agents",
+      name: "Voice Agent",
       icon: Bot,
-      href: `/${tenantId}/voice-agents`,
+      href: restaurantId 
+        ? `/${tenantId}/restaurants/${restaurantId}/voice-agent`
+        : `/${tenantId}/voice-agents`,
       color: "text-cyan-600",
       requiredPermission: "access_integrations",
     },
