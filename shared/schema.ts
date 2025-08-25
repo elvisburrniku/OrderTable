@@ -74,6 +74,11 @@ export const users = pgTable("users", {
   restaurantName: text("restaurant_name"),
   ssoProvider: varchar("sso_provider", { length: 50 }), // google, github, etc.
   ssoId: text("sso_id"), // Provider's user ID
+  onboardingCompleted: boolean("onboarding_completed").default(false),
+  dateOfBirth: date("date_of_birth"),
+  emailOptIn: boolean("email_opt_in").default(true),
+  preferences: jsonb("preferences"),
+  updatedAt: timestamp("updated_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

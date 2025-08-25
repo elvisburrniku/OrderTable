@@ -18,14 +18,21 @@ export function SetupGuard({ children }: SetupGuardProps) {
 
   useEffect(() => {
     if (!isLoading && session) {
+      const user = (session as any)?.user;
       const restaurant = (session as any)?.restaurant;
       
-      // If user is authenticated but setup is not completed, redirect to setup wizard
+      // Check if user has completed onboarding first
+      if (user && !user.onboardingCompleted) {
+        setLocation('/onboarding');
+        return;
+      }
+      
+      // If onboarding is completed but setup is not, redirect to setup wizard
       if (restaurant && !restaurant.setupCompleted) {
         setLocation('/setup');
       }
     }
-  }, [session, isLoading]);
+  }, [session, isLoading, setLocation]);
 
   // Show loading while checking setup status
   if (isLoading) {
@@ -41,7 +48,17 @@ export function SetupGuard({ children }: SetupGuardProps) {
     return <>{children}</>;
   }
 
+  const user = (session as any)?.user;
   const restaurant = (session as any)?.restaurant;
+  
+  // If onboarding is not completed, don't render children (redirect will happen)
+  if (user && !user.onboardingCompleted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
   
   // If setup is not completed, don't render children (redirect will happen)
   if (restaurant && !restaurant.setupCompleted) {
