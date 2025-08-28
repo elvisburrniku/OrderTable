@@ -563,7 +563,6 @@ Always end with: "${closing}"
       throw error;
     }
   }
-}
 
   // === KNOWLEDGE BASE MANAGEMENT ===
 

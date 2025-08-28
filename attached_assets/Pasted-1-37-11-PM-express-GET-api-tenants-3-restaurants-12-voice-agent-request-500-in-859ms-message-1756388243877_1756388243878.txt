@@ -1,0 +1,50 @@
+1:37:11 PM [express] GET /api/tenants/3/restaurants/12/voice-agent/request 500 in 859ms :: {"message…
+Error fetching credit stats: error: column "credit_balance" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async VoiceAgentRequestService.getCreditStats (/home/runner/workspace/server/voice-agent-request-service.ts:523:25)
+    at async <anonymous> (/home/runner/workspace/server/voice-agent-routes.ts:443:21) {
+  length: 114,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '27',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+Error fetching credit stats: error: column "credit_balance" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async VoiceAgentRequestService.getCreditStats (/home/runner/workspace/server/voice-agent-request-service.ts:523:25)
+    at async <anonymous> (/home/runner/workspace/server/voice-agent-routes.ts:443:21) {
+  length: 114,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '27',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+1:37:11 PM [express] GET /api/tenants/3/voice-agent/credits 500 in 858ms :: {"message":"Failed to fe…
