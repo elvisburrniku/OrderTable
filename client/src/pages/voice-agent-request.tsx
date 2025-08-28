@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Phone, Clock, AlertTriangle, CheckCircle, XCircle, CreditCard, Euro, Copy, History, Play, Mic, Settings } from 'lucide-react';
+import { Phone, Clock, AlertTriangle, CheckCircle, XCircle, CreditCard, Euro, Copy, History, Play, Mic, Settings, Book, Wrench, Zap, Plus, Trash2 } from 'lucide-react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -33,15 +33,37 @@ const creditTopUpSchema = z.object({
   amount: z.coerce.number().min(20, 'Minimum top-up is €20').max(500, 'Maximum top-up is €500')
 });
 
+const knowledgeBaseItemSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  type: z.enum(['text', 'url']),
+  content: z.string().optional(),
+  source_url: z.string().url().optional()
+}).refine(data => {
+  if (data.type === 'text') return !!data.content;
+  if (data.type === 'url') return !!data.source_url;
+  return true;
+}, {
+  message: 'Content is required for text type, URL is required for URL type'
+});
+
+const serverToolSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().min(1, 'Description is required'),
+  method: z.enum(['GET', 'POST']),
+  url: z.string().url('Valid URL is required')
+});
+
 type VoiceAgentRequestFormData = z.infer<typeof voiceAgentRequestSchema>;
 type CreditTopUpFormData = z.infer<typeof creditTopUpSchema>;
+type KnowledgeBaseItemFormData = z.infer<typeof knowledgeBaseItemSchema>;
+type ServerToolFormData = z.infer<typeof serverToolSchema>;
 
 export default function VoiceAgentRequest() {
   const { tenantId, restaurantId } = useParams<{ tenantId: string; restaurantId: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'request' | 'credits' | 'call-logs' | 'elevenlabs'>('request');
+  const [activeTab, setActiveTab] = useState<'request' | 'credits' | 'call-logs' | 'elevenlabs' | 'knowledge-base' | 'server-tools' | 'dynamic-variables'>('request');
   const [callLogsPage, setCallLogsPage] = useState(1);
 
   // Query for existing request
@@ -62,6 +84,24 @@ export default function VoiceAgentRequest() {
     enabled: !!tenantId && !!restaurantId && activeTab === 'call-logs',
   });
 
+  // Query for knowledge base items
+  const { data: knowledgeBaseData, isLoading: isLoadingKnowledgeBase } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-knowledge-base`],
+    enabled: !!tenantId && !!restaurantId && activeTab === 'knowledge-base',
+  });
+
+  // Query for server tools
+  const { data: serverToolsData, isLoading: isLoadingServerTools } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-server-tools`],
+    enabled: !!tenantId && !!restaurantId && activeTab === 'server-tools',
+  });
+
+  // Query for dynamic variables
+  const { data: dynamicVariablesData, isLoading: isLoadingDynamicVariables } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-dynamic-variables`],
+    enabled: !!tenantId && !!restaurantId && activeTab === 'dynamic-variables',
+  });
+
   // Form for voice agent request
   const requestForm = useForm<VoiceAgentRequestFormData>({
     resolver: zodResolver(voiceAgentRequestSchema),
@@ -77,6 +117,28 @@ export default function VoiceAgentRequest() {
     resolver: zodResolver(creditTopUpSchema),
     defaultValues: {
       amount: 50
+    }
+  });
+
+  // Form for knowledge base items
+  const knowledgeBaseForm = useForm<KnowledgeBaseItemFormData>({
+    resolver: zodResolver(knowledgeBaseItemSchema),
+    defaultValues: {
+      name: '',
+      type: 'text',
+      content: '',
+      source_url: ''
+    }
+  });
+
+  // Form for server tools
+  const serverToolForm = useForm<ServerToolFormData>({
+    resolver: zodResolver(serverToolSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      method: 'GET',
+      url: ''
     }
   });
 
@@ -120,6 +182,104 @@ export default function VoiceAgentRequest() {
       toast({
         title: 'Payment Failed',
         description: error.message || 'Failed to create payment intent',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Create knowledge base item
+  const createKnowledgeBaseMutation = useMutation({
+    mutationFn: async (data: KnowledgeBaseItemFormData) => {
+      const response = await apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-knowledge-base`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Knowledge Base Updated',
+        description: 'Knowledge base item added successfully.',
+      });
+      knowledgeBaseForm.reset();
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-knowledge-base`] 
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to Add Knowledge Base Item',
+        description: error.message || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete knowledge base item
+  const deleteKnowledgeBaseMutation = useMutation({
+    mutationFn: async (knowledgeBaseId: string) => {
+      const response = await apiRequest('DELETE', `/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-knowledge-base/${knowledgeBaseId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Knowledge Base Updated',
+        description: 'Knowledge base item deleted successfully.',
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-knowledge-base`] 
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to Delete Knowledge Base Item',
+        description: error.message || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Create server tool
+  const createServerToolMutation = useMutation({
+    mutationFn: async (data: ServerToolFormData) => {
+      const response = await apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-server-tools`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Server Tool Added',
+        description: 'Server tool created successfully.',
+      });
+      serverToolForm.reset();
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-server-tools`] 
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to Add Server Tool',
+        description: error.message || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete server tool
+  const deleteServerToolMutation = useMutation({
+    mutationFn: async (toolId: string) => {
+      const response = await apiRequest('DELETE', `/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-server-tools/${toolId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Server Tool Deleted',
+        description: 'Server tool deleted successfully.',
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/elevenlabs-server-tools`] 
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to Delete Server Tool',
+        description: error.message || 'An error occurred',
         variant: 'destructive',
       });
     },
@@ -198,6 +358,30 @@ export default function VoiceAgentRequest() {
         >
           <History className="w-4 h-4" />
           Call History
+        </Button>
+        <Button 
+          variant={activeTab === 'knowledge-base' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('knowledge-base')}
+          className="flex items-center gap-2"
+        >
+          <Book className="w-4 h-4" />
+          Knowledge Base
+        </Button>
+        <Button 
+          variant={activeTab === 'server-tools' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('server-tools')}
+          className="flex items-center gap-2"
+        >
+          <Wrench className="w-4 h-4" />
+          Server Tools
+        </Button>
+        <Button 
+          variant={activeTab === 'dynamic-variables' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('dynamic-variables')}
+          className="flex items-center gap-2"
+        >
+          <Zap className="w-4 h-4" />
+          Dynamic Variables
         </Button>
       </div>
 
@@ -760,6 +944,467 @@ export default function VoiceAgentRequest() {
                       </p>
                     </div>
                   )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Knowledge Base Tab */}
+      {activeTab === 'knowledge-base' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Book className="w-5 h-5" />
+                Knowledge Base Management
+              </CardTitle>
+              <CardDescription>
+                Add restaurant information, menus, policies, and FAQs to your voice agent's knowledge base
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...knowledgeBaseForm}>
+                <form 
+                  onSubmit={knowledgeBaseForm.handleSubmit((data) => createKnowledgeBaseMutation.mutate(data))}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={knowledgeBaseForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Knowledge Item Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., Restaurant Menu, Opening Hours, Policies"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={knowledgeBaseForm.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Content Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select content type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="text">Text Content</SelectItem>
+                            <SelectItem value="url">Website URL</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {knowledgeBaseForm.watch('type') === 'text' && (
+                    <FormField
+                      control={knowledgeBaseForm.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Content</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Enter detailed information about your restaurant..."
+                              rows={6}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Provide detailed information your voice agent should know about your restaurant
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {knowledgeBaseForm.watch('type') === 'url' && (
+                    <FormField
+                      control={knowledgeBaseForm.control}
+                      name="source_url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source URL</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://yourrestaurant.com/menu"
+                              type="url"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            URL to your restaurant's website, menu, or information page
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    disabled={createKnowledgeBaseMutation.isPending}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {createKnowledgeBaseMutation.isPending ? 'Adding...' : 'Add to Knowledge Base'}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          {/* Existing Knowledge Base Items */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Current Knowledge Base</CardTitle>
+              <CardDescription>
+                Information currently available to your voice agent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingKnowledgeBase ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="animate-pulse bg-gray-200 h-16 rounded-md" />
+                  ))}
+                </div>
+              ) : knowledgeBaseData?.knowledgeBaseItems?.length > 0 ? (
+                <div className="space-y-4">
+                  {knowledgeBaseData.knowledgeBaseItems.map((item: any) => (
+                    <div key={item.knowledge_base_id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{item.name}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Type: {item.type} • Status: {item.status}
+                          </p>
+                          {item.type === 'url' && item.source_url && (
+                            <p className="text-sm text-blue-600">{item.source_url}</p>
+                          )}
+                          {item.content && (
+                            <p className="text-sm text-gray-600 line-clamp-3">{item.content}</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteKnowledgeBaseMutation.mutate(item.knowledge_base_id)}
+                          disabled={deleteKnowledgeBaseMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Book className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    No Knowledge Base Items
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
+                    Add restaurant information to help your voice agent answer customer questions accurately.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Server Tools Tab */}
+      {activeTab === 'server-tools' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wrench className="w-5 h-5" />
+                Server Tools Configuration
+              </CardTitle>
+              <CardDescription>
+                Connect your voice agent to real-time restaurant data and booking systems
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...serverToolForm}>
+                <form 
+                  onSubmit={serverToolForm.handleSubmit((data) => createServerToolMutation.mutate(data))}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={serverToolForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tool Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., Check Availability, Get Menu Info"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={serverToolForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe what this tool does and when to use it..."
+                            rows={3}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={serverToolForm.control}
+                    name="method"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>HTTP Method</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select HTTP method" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="GET">GET</SelectItem>
+                            <SelectItem value="POST">POST</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={serverToolForm.control}
+                    name="url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>API Endpoint URL</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="https://your-restaurant-api.com/availability"
+                            type="url"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Full URL to your restaurant's API endpoint
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="submit" 
+                    disabled={createServerToolMutation.isPending}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {createServerToolMutation.isPending ? 'Adding...' : 'Add Server Tool'}
+                  </Button>
+                </form>
+              </Form>
+
+              {/* Pre-configured Tools */}
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-200">
+                  Pre-configured Tools Available:
+                </h4>
+                <div className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
+                  <div>
+                    <strong>Availability Checker:</strong> 
+                    <br />
+                    <code className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded">
+                      GET /api/tenants/{tenantId}/restaurants/{restaurantId}/availability-tool
+                    </code>
+                  </div>
+                  <div>
+                    <strong>Menu Information:</strong>
+                    <br />
+                    <code className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded">
+                      GET /api/tenants/{tenantId}/restaurants/{restaurantId}/menu-info-tool
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Existing Server Tools */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Configured Server Tools</CardTitle>
+              <CardDescription>
+                Tools currently available to your voice agent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingServerTools ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="animate-pulse bg-gray-200 h-16 rounded-md" />
+                  ))}
+                </div>
+              ) : serverToolsData?.serverTools?.length > 0 ? (
+                <div className="space-y-4">
+                  {serverToolsData.serverTools.map((tool: any) => (
+                    <div key={tool.tool_id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{tool.name}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">{tool.description}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <Badge variant="outline">{tool.config?.method || 'GET'}</Badge>
+                            <span className="font-mono">{tool.config?.url}</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteServerToolMutation.mutate(tool.tool_id)}
+                          disabled={deleteServerToolMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Wrench className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    No Server Tools Configured
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
+                    Add server tools to enable your voice agent to access real-time restaurant data.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Dynamic Variables Tab */}
+      {activeTab === 'dynamic-variables' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                Dynamic Variables
+              </CardTitle>
+              <CardDescription>
+                Real-time variables automatically available to your voice agent for personalized conversations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingDynamicVariables ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="animate-pulse bg-gray-200 h-8 rounded-md" />
+                  ))}
+                </div>
+              ) : dynamicVariablesData?.dynamicVariables ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(dynamicVariablesData.dynamicVariables)
+                      .filter(([key]) => !key.startsWith('system__'))
+                      .map(([key, value]) => (
+                      <div key={key} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <code className="text-sm font-mono text-blue-600">
+                            {`{{${key}}}`}
+                          </code>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`{{${key}}}`);
+                              toast({ title: 'Copied to clipboard' });
+                            }}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {typeof value === 'object' ? JSON.stringify(value) : value?.toString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="font-medium mb-3">System Variables (Auto-populated)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {Object.entries(dynamicVariablesData.dynamicVariables)
+                        .filter(([key]) => key.startsWith('system__'))
+                        .map(([key, value]) => (
+                        <div key={key} className="text-sm">
+                          <code className="text-gray-500 font-mono">
+                            {`{{${key}}}`}
+                          </code>
+                          <span className="text-gray-400 ml-2">- {value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4">
+                    <h4 className="font-medium mb-2 text-green-800 dark:text-green-200">
+                      How to Use Dynamic Variables
+                    </h4>
+                    <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                      <li>• Variables are automatically updated in real-time</li>
+                      <li>• Use variable syntax like <code>{`{{restaurant_name}}`}</code> in your agent prompts</li>
+                      <li>• System variables provide call context (caller ID, time, etc.)</li>
+                      <li>• Custom variables can be set through server tools</li>
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Zap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    No Dynamic Variables Available
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
+                    Dynamic variables will be generated automatically based on your restaurant data.
+                  </p>
                 </div>
               )}
             </CardContent>

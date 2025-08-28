@@ -4,9 +4,19 @@ import {
   restaurants,
   voiceCallLogs, 
   bookings,
+  voiceAgentKnowledgeBase,
+  voiceAgentDynamicVariables,
+  voiceAgentServerTools,
+  voiceAgentConversationAnalytics,
   type VoiceAgent,
   type InsertVoiceCallLog,
-  type InsertBooking
+  type InsertBooking,
+  type VoiceAgentKnowledgeBase as KnowledgeBaseType,
+  type InsertVoiceAgentKnowledgeBase,
+  type VoiceAgentDynamicVariable,
+  type InsertVoiceAgentDynamicVariable,
+  type VoiceAgentServerTool,
+  type InsertVoiceAgentServerTool
 } from '../shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 
@@ -18,6 +28,62 @@ interface ElevenLabsAgent {
   first_message: string;
   language: string;
   model: string;
+  knowledge_base?: Array<{
+    knowledge_base_id: string;
+    name: string;
+    type: string;
+  }>;
+  tools?: Array<{
+    tool_id: string;
+    name: string;
+    type: string;
+  }>;
+  dynamic_variables?: Record<string, any>;
+}
+
+interface ElevenLabsKnowledgeBaseItem {
+  knowledge_base_id: string;
+  name: string;
+  type: 'file' | 'url' | 'text';
+  content?: string;
+  source_url?: string;
+  file_url?: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+}
+
+interface ElevenLabsServerTool {
+  tool_id: string;
+  name: string;
+  description: string;
+  type: 'webhook';
+  config: {
+    method: string;
+    url: string;
+    headers?: Record<string, string>;
+    authentication_id?: string;
+    path_parameters?: Array<{
+      name: string;
+      type: string;
+      description?: string;
+      required?: boolean;
+    }>;
+    query_parameters?: Array<{
+      name: string;
+      type: string;
+      description?: string;
+      required?: boolean;
+    }>;
+    body_parameters?: Array<{
+      name: string;
+      type: string;
+      description?: string;
+      required?: boolean;
+    }>;
+    assignments?: Array<{
+      variable_name: string;
+      response_path: string;
+    }>;
+  };
 }
 
 interface ElevenLabsConversation {
@@ -56,10 +122,22 @@ export class ElevenLabsService {
     }
   }
 
-  // Create restaurant assistant prompt template
-  generateRestaurantPrompt(restaurantName: string, customGreeting?: string, customClosing?: string): string {
+  // Enhanced restaurant prompt with dynamic variables support
+  generateRestaurantPrompt(
+    restaurantName: string, 
+    customGreeting?: string, 
+    customClosing?: string,
+    dynamicVariables?: Record<string, string>
+  ): string {
     const greeting = customGreeting || `Thank you for calling ${restaurantName}, this is the reservations assistant. How may I help you today?`;
     const closing = customClosing || `Thank you for calling ${restaurantName}. We look forward to serving you!`;
+
+    // Build dynamic variable placeholders
+    const dynamicVarPlaceholders = dynamicVariables ? 
+      Object.keys(dynamicVariables).map(key => `{{${key}}}`).join(', ') : '';
+
+    const dynamicVarInstructions = dynamicVariables && Object.keys(dynamicVariables).length > 0 ? 
+      `\n\n## Dynamic Information Available\nYou have access to real-time information through these variables: ${dynamicVarPlaceholders}\nUse this information to provide accurate, up-to-date responses to customers.` : '';
 
     return `You are a friendly and professional restaurant reservation assistant for ${restaurantName}.
 
@@ -67,39 +145,52 @@ export class ElevenLabsService {
 - Warm, polite, and professional
 - Speak in a natural, human-like style
 - Always thank callers for choosing ${restaurantName}
+- Use available real-time information to provide accurate responses
 
 ## Greeting
 "${greeting}"
 
-## Capabilities
-1. **Reservation Management:**
+## Enhanced Capabilities
+1. **Smart Reservation Management:**
+   - Check real-time table availability using available tools
    - Collect caller's name, date, time, number of guests, and special requests
    - Handle new reservations, changes, and cancellations
-   - Confirm by repeating details: "Just to confirm, [guest_name], your reservation is for [guests] guests on [date] at [time]."
+   - Provide alternative times if requested slot is unavailable
+   - Confirm by repeating details: "Just to confirm, {{caller_name}}, your reservation is for {{guests}} guests on {{date}} at {{time}}."
 
-2. **Information Requests:**
-   - Provide basic restaurant information (hours, location, menu highlights)
-   - Answer common questions about dining policies
+2. **Intelligent Information Requests:**
+   - Access restaurant knowledge base for accurate information
+   - Provide current hours, location, menu highlights, and policies
+   - Share today's specials and current promotions
+   - Answer questions about dietary restrictions and allergens
 
-3. **Fallback Handling:**
-   If unsure about something, say: "Let me forward your request to the staff, and someone will get back to you shortly."
+3. **Advanced Customer Service:**
+   - Recognize returning customers when possible
+   - Provide personalized recommendations
+   - Handle special occasion bookings (birthdays, anniversaries)
+   - Manage waitlist requests during busy periods
+
+4. **Smart Escalation:**
+   If you encounter something outside your capabilities, say: "Let me connect you with our staff who can assist you with that specific request."
 
 ## Closing
 Always end with: "${closing}"
 
-## Important Instructions
+## Critical Instructions
+- Always use available tools to check real-time availability before confirming reservations
 - Extract booking information in this JSON format when a reservation is made:
   {
     "action": "new_reservation|cancel_reservation|modify_reservation|inquiry",
-    "guest_name": "customer name",
-    "date": "YYYY-MM-DD",
-    "time": "HH:MM",
-    "guests": number,
-    "special_requests": "any special requests",
-    "phone_number": "caller's phone number"
+    "guest_name": "{{caller_name}}",
+    "date": "{{booking_date}}",
+    "time": "{{booking_time}}",
+    "guests": {{party_size}},
+    "special_requests": "{{special_requests}}",
+    "phone_number": "{{system__caller_id}}"
   }
-- Be helpful but stay within your role as a reservation assistant
-- If asked about complex menu details or policies you're unsure about, offer to connect them with staff`;
+- Use knowledge base information for accurate restaurant details
+- Leverage dynamic variables for personalized service
+- Be helpful but stay within your role as a reservation assistant${dynamicVarInstructions}`;
   }
 
   // Create ElevenLabs conversational agent
@@ -127,10 +218,14 @@ Always end with: "${closing}"
         throw new Error('Restaurant not found');
       }
 
+      // Generate dynamic variables for this restaurant
+      const dynamicVariables = await this.generateDynamicVariables(config.restaurantId);
+
       const prompt = this.generateRestaurantPrompt(
         restaurant.name, 
         config.customGreeting, 
-        config.customClosing
+        config.customClosing,
+        dynamicVariables
       );
 
       const agentPayload = {
@@ -198,10 +293,14 @@ Always end with: "${closing}"
 
       // Always update prompt if greeting/closing changed
       if (config.customGreeting || config.customClosing) {
+        // Generate dynamic variables for this restaurant
+        const dynamicVariables = await this.generateDynamicVariables(config.restaurantId);
+        
         updatePayload.prompt = this.generateRestaurantPrompt(
           restaurant.name, 
           config.customGreeting, 
-          config.customClosing
+          config.customClosing,
+          dynamicVariables
         );
         updatePayload.first_message = config.customGreeting || `Thank you for calling ${restaurant.name}, this is the reservations assistant. How may I help you today?`;
       }
@@ -462,6 +561,353 @@ Always end with: "${closing}"
     } catch (error) {
       console.error('Error logging incoming call:', error);
       throw error;
+    }
+  }
+}
+
+  // === KNOWLEDGE BASE MANAGEMENT ===
+
+  // Create knowledge base item for agent
+  async createKnowledgeBaseItem(agentId: string, item: {
+    name: string;
+    type: 'file' | 'url' | 'text';
+    content?: string;
+    source_url?: string;
+    file_data?: Buffer;
+    file_name?: string;
+    mime_type?: string;
+  }): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('ElevenLabs API key not configured');
+    }
+
+    try {
+      let payload: any = {
+        name: item.name,
+        type: item.type
+      };
+
+      if (item.type === 'text' && item.content) {
+        payload.text = item.content;
+      } else if (item.type === 'url' && item.source_url) {
+        payload.source_url = item.source_url;
+      } else if (item.type === 'file' && item.file_data) {
+        // For file uploads, we need to use FormData
+        const formData = new FormData();
+        formData.append('name', item.name);
+        formData.append('type', item.type);
+        formData.append('file', new Blob([item.file_data], { type: item.mime_type }), item.file_name);
+        
+        const response = await fetch(`${this.baseUrl}/convai/agents/${agentId}/knowledge-base`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`ElevenLabs Knowledge Base API error: ${response.status} - ${error}`);
+        }
+
+        const result = await response.json();
+        return result.knowledge_base_id;
+      }
+
+      // For text and URL types
+      const response = await fetch(`${this.baseUrl}/convai/agents/${agentId}/knowledge-base`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`ElevenLabs Knowledge Base API error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+      return result.knowledge_base_id;
+
+    } catch (error) {
+      console.error('Error creating knowledge base item:', error);
+      throw error;
+    }
+  }
+
+  // Get knowledge base items for agent
+  async getKnowledgeBaseItems(agentId: string): Promise<ElevenLabsKnowledgeBaseItem[]> {
+    if (!this.apiKey) {
+      throw new Error('ElevenLabs API key not configured');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/convai/agents/${agentId}/knowledge-base`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`ElevenLabs Knowledge Base API error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+      return result.knowledge_base_items || [];
+
+    } catch (error) {
+      console.error('Error getting knowledge base items:', error);
+      throw error;
+    }
+  }
+
+  // Delete knowledge base item
+  async deleteKnowledgeBaseItem(agentId: string, knowledgeBaseId: string): Promise<void> {
+    if (!this.apiKey) {
+      throw new Error('ElevenLabs API key not configured');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/convai/agents/${agentId}/knowledge-base/${knowledgeBaseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`ElevenLabs Knowledge Base API error: ${response.status} - ${error}`);
+      }
+
+    } catch (error) {
+      console.error('Error deleting knowledge base item:', error);
+      throw error;
+    }
+  }
+
+  // === SERVER TOOLS MANAGEMENT ===
+
+  // Create server tool for agent
+  async createServerTool(agentId: string, tool: {
+    name: string;
+    description: string;
+    method: string;
+    url: string;
+    authentication_id?: string;
+    headers?: Record<string, string>;
+    path_parameters?: Array<{
+      name: string;
+      type: string;
+      description?: string;
+      required?: boolean;
+    }>;
+    query_parameters?: Array<{
+      name: string;
+      type: string;
+      description?: string;
+      required?: boolean;
+    }>;
+    body_parameters?: Array<{
+      name: string;
+      type: string;
+      description?: string;
+      required?: boolean;
+    }>;
+    response_assignments?: Array<{
+      variable_name: string;
+      response_path: string;
+    }>;
+  }): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('ElevenLabs API key not configured');
+    }
+
+    try {
+      const toolPayload = {
+        name: tool.name,
+        description: tool.description,
+        type: 'webhook',
+        tool_config: {
+          method: tool.method,
+          url: tool.url,
+          authentication_id: tool.authentication_id,
+          headers: tool.headers || {},
+          path_parameters: tool.path_parameters || [],
+          query_parameters: tool.query_parameters || [],
+          body_parameters: tool.body_parameters || [],
+          assignments: tool.response_assignments || []
+        }
+      };
+
+      const response = await fetch(`${this.baseUrl}/convai/agents/${agentId}/tools`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(toolPayload)
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`ElevenLabs Tools API error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+      return result.tool_id;
+
+    } catch (error) {
+      console.error('Error creating server tool:', error);
+      throw error;
+    }
+  }
+
+  // Get server tools for agent
+  async getServerTools(agentId: string): Promise<ElevenLabsServerTool[]> {
+    if (!this.apiKey) {
+      throw new Error('ElevenLabs API key not configured');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/convai/agents/${agentId}/tools`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`ElevenLabs Tools API error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+      return result.tools || [];
+
+    } catch (error) {
+      console.error('Error getting server tools:', error);
+      throw error;
+    }
+  }
+
+  // Delete server tool
+  async deleteServerTool(agentId: string, toolId: string): Promise<void> {
+    if (!this.apiKey) {
+      throw new Error('ElevenLabs API key not configured');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/convai/agents/${agentId}/tools/${toolId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`ElevenLabs Tools API error: ${response.status} - ${error}`);
+      }
+
+    } catch (error) {
+      console.error('Error deleting server tool:', error);
+      throw error;
+    }
+  }
+
+  // === CONVERSATION INITIATION WITH DYNAMIC VARIABLES ===
+
+  // Start conversation with dynamic variables
+  async startConversationWithDynamicVariables(agentId: string, dynamicVariables: Record<string, any> = {}): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('ElevenLabs API key not configured');
+    }
+
+    try {
+      const conversationPayload = {
+        agent_id: agentId,
+        dynamic_variables: dynamicVariables
+      };
+
+      const response = await fetch(`${this.baseUrl}/convai/conversations`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(conversationPayload)
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`ElevenLabs Conversation API error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+      return result.conversation_id;
+
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      throw error;
+    }
+  }
+
+  // Generate real-time dynamic variables for restaurant
+  async generateDynamicVariables(restaurantId: number): Promise<Record<string, any>> {
+    try {
+      // Get current restaurant data
+      const [restaurant] = await db
+        .select()
+        .from(restaurants)
+        .where(eq(restaurants.id, restaurantId))
+        .limit(1);
+
+      if (!restaurant) {
+        throw new Error('Restaurant not found');
+      }
+
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
+
+      // Build dynamic variables
+      const dynamicVariables: Record<string, any> = {
+        restaurant_name: restaurant.name,
+        current_date: today,
+        current_time: currentTime,
+        restaurant_address: restaurant.address || 'Please ask for our location',
+        restaurant_phone: restaurant.phone || '',
+        booking_availability_status: 'checking...' // This would be updated by tools
+      };
+
+      // Add system variables that ElevenLabs provides automatically
+      // These are just for reference in our system
+      const systemVariables = {
+        'system__agent_id': 'auto-populated',
+        'system__current_agent_id': 'auto-populated',
+        'system__caller_id': 'auto-populated',
+        'system__called_number': 'auto-populated',
+        'system__call_duration_secs': 'auto-populated',
+        'system__time_utc': 'auto-populated',
+        'system__conversation_id': 'auto-populated'
+      };
+
+      return { ...dynamicVariables, ...systemVariables };
+
+    } catch (error) {
+      console.error('Error generating dynamic variables:', error);
+      return {
+        restaurant_name: 'Restaurant',
+        current_date: new Date().toISOString().split('T')[0],
+        current_time: new Date().toTimeString().split(' ')[0].substring(0, 5)
+      };
     }
   }
 }

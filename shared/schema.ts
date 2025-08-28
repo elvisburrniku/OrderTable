@@ -2295,3 +2295,103 @@ export const insertVoiceAgentCreditsSchema = createInsertSchema(voiceAgentCredit
 export const selectVoiceAgentCreditsSchema = createSelectSchema(voiceAgentCredits);
 export const insertVoiceAgentTransactionSchema = createInsertSchema(voiceAgentTransactions);
 export const selectVoiceAgentTransactionSchema = createSelectSchema(voiceAgentTransactions);
+
+// ElevenLabs Advanced Features Tables
+
+// Knowledge Base Items for Voice Agents
+export const voiceAgentKnowledgeBase = pgTable("voice_agent_knowledge_base", {
+  id: serial("id").primaryKey(),
+  voiceAgentId: integer("voice_agent_id").notNull().references(() => voiceAgents.id, { onDelete: 'cascade' }),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // 'file', 'url', 'text'
+  content: text("content"), // For text type or processed content
+  sourceUrl: text("source_url"), // For URL type
+  fileUrl: text("file_url"), // For file type
+  fileName: text("file_name"), // Original file name
+  fileSize: integer("file_size"), // File size in bytes
+  mimeType: varchar("mime_type", { length: 100 }),
+  elevenlabsKnowledgeId: text("elevenlabs_knowledge_id"), // ElevenLabs knowledge base item ID
+  processingStatus: varchar("processing_status", { length: 20 }).default("pending"), // pending, processing, completed, failed
+  errorMessage: text("error_message"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Dynamic Variables for Voice Agents
+export const voiceAgentDynamicVariables = pgTable("voice_agent_dynamic_variables", {
+  id: serial("id").primaryKey(),
+  voiceAgentId: integer("voice_agent_id").notNull().references(() => voiceAgents.id, { onDelete: 'cascade' }),
+  variableName: varchar("variable_name", { length: 100 }).notNull(),
+  variableType: varchar("variable_type", { length: 20 }).default("string"), // string, number, boolean, secret
+  defaultValue: text("default_value"),
+  description: text("description"),
+  isSystemVariable: boolean("is_system_variable").default(false), // true for system__ variables
+  isSecret: boolean("is_secret").default(false), // true for secret__ variables
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueVariablePerAgent: unique().on(table.voiceAgentId, table.variableName),
+}));
+
+// Server Tools for Voice Agents  
+export const voiceAgentServerTools = pgTable("voice_agent_server_tools", {
+  id: serial("id").primaryKey(),
+  voiceAgentId: integer("voice_agent_id").notNull().references(() => voiceAgents.id, { onDelete: 'cascade' }),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  method: varchar("method", { length: 10 }).notNull(), // GET, POST, PUT, DELETE, PATCH
+  url: text("url").notNull(),
+  authenticationId: text("authentication_id"), // Reference to ElevenLabs auth config
+  headers: jsonb("headers").default({}), // Custom headers
+  pathParameters: jsonb("path_parameters").default([]), // Path parameter definitions
+  queryParameters: jsonb("query_parameters").default([]), // Query parameter definitions
+  bodyParameters: jsonb("body_parameters").default([]), // Body parameter definitions
+  responseAssignments: jsonb("response_assignments").default([]), // Dynamic variable assignments from response
+  elevenlabsToolId: text("elevenlabs_tool_id"), // ElevenLabs tool ID
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueToolPerAgent: unique().on(table.voiceAgentId, table.name),
+}));
+
+// Voice Agent Conversation Analytics
+export const voiceAgentConversationAnalytics = pgTable("voice_agent_conversation_analytics", {
+  id: serial("id").primaryKey(),
+  callLogId: integer("call_log_id").notNull().references(() => voiceCallLogs.id, { onDelete: 'cascade' }),
+  voiceAgentId: integer("voice_agent_id").notNull().references(() => voiceAgents.id),
+  conversationDuration: integer("conversation_duration"), // seconds
+  toolCallsCount: integer("tool_calls_count").default(0),
+  knowledgeBaseQueriesCount: integer("knowledge_base_queries_count").default(0),
+  sentimentScore: decimal("sentiment_score", { precision: 3, scale: 2 }), // -1.00 to 1.00
+  customerSatisfactionScore: decimal("customer_satisfaction_score", { precision: 3, scale: 2 }), // 0.00 to 5.00
+  bookingSuccess: boolean("booking_success"),
+  handoffToHuman: boolean("handoff_to_human").default(false),
+  errorCount: integer("error_count").default(0),
+  conversationTopics: jsonb("conversation_topics").default([]), // Extracted topics/themes
+  languageDetected: varchar("language_detected", { length: 10 }),
+  responseLatencyMs: jsonb("response_latency_ms").default([]), // Array of response times
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Enhanced Types
+export type VoiceAgentKnowledgeBase = InferSelectModel<typeof voiceAgentKnowledgeBase>;
+export type InsertVoiceAgentKnowledgeBase = InferInsertModel<typeof voiceAgentKnowledgeBase>;
+export type VoiceAgentDynamicVariable = InferSelectModel<typeof voiceAgentDynamicVariables>;
+export type InsertVoiceAgentDynamicVariable = InferInsertModel<typeof voiceAgentDynamicVariables>;
+export type VoiceAgentServerTool = InferSelectModel<typeof voiceAgentServerTools>;
+export type InsertVoiceAgentServerTool = InferInsertModel<typeof voiceAgentServerTools>;
+export type VoiceAgentConversationAnalytics = InferSelectModel<typeof voiceAgentConversationAnalytics>;
+export type InsertVoiceAgentConversationAnalytics = InferInsertModel<typeof voiceAgentConversationAnalytics>;
+
+// Enhanced Schemas
+export const insertVoiceAgentKnowledgeBaseSchema = createInsertSchema(voiceAgentKnowledgeBase);
+export const selectVoiceAgentKnowledgeBaseSchema = createSelectSchema(voiceAgentKnowledgeBase);
+export const insertVoiceAgentDynamicVariableSchema = createInsertSchema(voiceAgentDynamicVariables);
+export const selectVoiceAgentDynamicVariableSchema = createSelectSchema(voiceAgentDynamicVariables);
+export const insertVoiceAgentServerToolSchema = createInsertSchema(voiceAgentServerTools);
+export const selectVoiceAgentServerToolSchema = createSelectSchema(voiceAgentServerTools);
+export const insertVoiceAgentConversationAnalyticsSchema = createInsertSchema(voiceAgentConversationAnalytics);
+export const selectVoiceAgentConversationAnalyticsSchema = createSelectSchema(voiceAgentConversationAnalytics);

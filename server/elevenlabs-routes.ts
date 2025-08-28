@@ -13,14 +13,52 @@ const createElevenLabsAgentSchema = z.object({
   voiceId: z.string().min(1, 'Voice ID is required'),
   language: z.string().default('en'),
   customGreeting: z.string().optional(),
-  customClosingMessage: z.string().optional()
+  customClosingMessage: z.string().optional(),
+  knowledgeBaseItems: z.array(z.object({
+    name: z.string(),
+    type: z.enum(['file', 'url', 'text']),
+    content: z.string().optional(),
+    source_url: z.string().optional()
+  })).optional(),
+  serverTools: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    method: z.string(),
+    url: z.string(),
+    authenticationId: z.string().optional(),
+    headers: z.record(z.string()).optional(),
+    pathParameters: z.array(z.any()).optional(),
+    queryParameters: z.array(z.any()).optional(),
+    bodyParameters: z.array(z.any()).optional(),
+    responseAssignments: z.array(z.any()).optional()
+  })).optional(),
+  dynamicVariables: z.record(z.any()).optional()
 });
 
 const updateElevenLabsAgentSchema = z.object({
   voiceId: z.string().optional(),
   language: z.string().optional(),
   customGreeting: z.string().optional(),
-  customClosingMessage: z.string().optional()
+  customClosingMessage: z.string().optional(),
+  knowledgeBaseItems: z.array(z.object({
+    name: z.string(),
+    type: z.enum(['file', 'url', 'text']),
+    content: z.string().optional(),
+    source_url: z.string().optional()
+  })).optional(),
+  serverTools: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    method: z.string(),
+    url: z.string(),
+    authenticationId: z.string().optional(),
+    headers: z.record(z.string()).optional(),
+    pathParameters: z.array(z.any()).optional(),
+    queryParameters: z.array(z.any()).optional(),
+    bodyParameters: z.array(z.any()).optional(),
+    responseAssignments: z.array(z.any()).optional()
+  })).optional(),
+  dynamicVariables: z.record(z.any()).optional()
 });
 
 const webhookSchema = z.object({
@@ -435,5 +473,508 @@ router.post('/elevenlabs/call-started', async (req, res) => {
     res.status(500).json({ error: 'Failed to log call' });
   }
 });
+
+// GET /api/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-knowledge-base
+// Get knowledge base items for restaurant's voice agent
+router.get('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-knowledge-base',
+  requirePermission('access_voice_agents'),
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+
+      const [voiceAgent] = await db
+        .select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.restaurantId, parseInt(restaurantId)),
+          eq(voiceAgents.tenantId, parseInt(tenantId))
+        ))
+        .limit(1);
+
+      if (!voiceAgent || !voiceAgent.elevenlabsAgentId) {
+        return res.status(404).json({ error: 'ElevenLabs voice agent not found' });
+      }
+
+      const knowledgeBaseItems = await elevenLabsService.getKnowledgeBaseItems(voiceAgent.elevenlabsAgentId);
+      
+      res.json({ knowledgeBaseItems });
+
+    } catch (error) {
+      console.error('Error fetching knowledge base items:', error);
+      res.status(500).json({ error: 'Failed to fetch knowledge base items' });
+    }
+  }
+);
+
+// POST /api/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-knowledge-base
+// Add knowledge base item
+router.post('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-knowledge-base',
+  requirePermission('manage_voice_agents'),
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const { name, type, content, source_url } = req.body;
+
+      const [voiceAgent] = await db
+        .select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.restaurantId, parseInt(restaurantId)),
+          eq(voiceAgents.tenantId, parseInt(tenantId))
+        ))
+        .limit(1);
+
+      if (!voiceAgent || !voiceAgent.elevenlabsAgentId) {
+        return res.status(404).json({ error: 'ElevenLabs voice agent not found' });
+      }
+
+      const knowledgeBaseId = await elevenLabsService.createKnowledgeBaseItem(
+        voiceAgent.elevenlabsAgentId,
+        { name, type, content, source_url }
+      );
+
+      res.json({ 
+        success: true, 
+        knowledgeBaseId,
+        message: 'Knowledge base item created successfully' 
+      });
+
+    } catch (error) {
+      console.error('Error creating knowledge base item:', error);
+      res.status(500).json({ error: 'Failed to create knowledge base item' });
+    }
+  }
+);
+
+// DELETE /api/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-knowledge-base/:knowledgeBaseId
+// Delete knowledge base item
+router.delete('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-knowledge-base/:knowledgeBaseId',
+  requirePermission('manage_voice_agents'),
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId, knowledgeBaseId } = req.params;
+
+      const [voiceAgent] = await db
+        .select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.restaurantId, parseInt(restaurantId)),
+          eq(voiceAgents.tenantId, parseInt(tenantId))
+        ))
+        .limit(1);
+
+      if (!voiceAgent || !voiceAgent.elevenlabsAgentId) {
+        return res.status(404).json({ error: 'ElevenLabs voice agent not found' });
+      }
+
+      await elevenLabsService.deleteKnowledgeBaseItem(voiceAgent.elevenlabsAgentId, knowledgeBaseId);
+
+      res.json({ 
+        success: true,
+        message: 'Knowledge base item deleted successfully' 
+      });
+
+    } catch (error) {
+      console.error('Error deleting knowledge base item:', error);
+      res.status(500).json({ error: 'Failed to delete knowledge base item' });
+    }
+  }
+);
+
+// GET /api/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-server-tools
+// Get server tools for restaurant's voice agent
+router.get('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-server-tools',
+  requirePermission('access_voice_agents'),
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+
+      const [voiceAgent] = await db
+        .select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.restaurantId, parseInt(restaurantId)),
+          eq(voiceAgents.tenantId, parseInt(tenantId))
+        ))
+        .limit(1);
+
+      if (!voiceAgent || !voiceAgent.elevenlabsAgentId) {
+        return res.status(404).json({ error: 'ElevenLabs voice agent not found' });
+      }
+
+      const serverTools = await elevenLabsService.getServerTools(voiceAgent.elevenlabsAgentId);
+      
+      res.json({ serverTools });
+
+    } catch (error) {
+      console.error('Error fetching server tools:', error);
+      res.status(500).json({ error: 'Failed to fetch server tools' });
+    }
+  }
+);
+
+// POST /api/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-server-tools
+// Add server tool
+router.post('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-server-tools',
+  requirePermission('manage_voice_agents'),
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const toolConfig = req.body;
+
+      const [voiceAgent] = await db
+        .select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.restaurantId, parseInt(restaurantId)),
+          eq(voiceAgents.tenantId, parseInt(tenantId))
+        ))
+        .limit(1);
+
+      if (!voiceAgent || !voiceAgent.elevenlabsAgentId) {
+        return res.status(404).json({ error: 'ElevenLabs voice agent not found' });
+      }
+
+      const toolId = await elevenLabsService.createServerTool(
+        voiceAgent.elevenlabsAgentId,
+        toolConfig
+      );
+
+      res.json({ 
+        success: true, 
+        toolId,
+        message: 'Server tool created successfully' 
+      });
+
+    } catch (error) {
+      console.error('Error creating server tool:', error);
+      res.status(500).json({ error: 'Failed to create server tool' });
+    }
+  }
+);
+
+// DELETE /api/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-server-tools/:toolId
+// Delete server tool
+router.delete('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-server-tools/:toolId',
+  requirePermission('manage_voice_agents'),
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId, toolId } = req.params;
+
+      const [voiceAgent] = await db
+        .select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.restaurantId, parseInt(restaurantId)),
+          eq(voiceAgents.tenantId, parseInt(tenantId))
+        ))
+        .limit(1);
+
+      if (!voiceAgent || !voiceAgent.elevenlabsAgentId) {
+        return res.status(404).json({ error: 'ElevenLabs voice agent not found' });
+      }
+
+      await elevenLabsService.deleteServerTool(voiceAgent.elevenlabsAgentId, toolId);
+
+      res.json({ 
+        success: true,
+        message: 'Server tool deleted successfully' 
+      });
+
+    } catch (error) {
+      console.error('Error deleting server tool:', error);
+      res.status(500).json({ error: 'Failed to delete server tool' });
+    }
+  }
+);
+
+// GET /api/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-dynamic-variables
+// Get dynamic variables for restaurant
+router.get('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-dynamic-variables',
+  requirePermission('access_voice_agents'),
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+
+      const dynamicVariables = await elevenLabsService.generateDynamicVariables(parseInt(restaurantId));
+      
+      res.json({ dynamicVariables });
+
+    } catch (error) {
+      console.error('Error generating dynamic variables:', error);
+      res.status(500).json({ error: 'Failed to generate dynamic variables' });
+    }
+  }
+);
+
+// POST /api/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-start-conversation
+// Start conversation with dynamic variables
+router.post('/tenants/:tenantId/restaurants/:restaurantId/elevenlabs-start-conversation',
+  requirePermission('access_voice_agents'),
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const { customDynamicVariables } = req.body;
+
+      const [voiceAgent] = await db
+        .select()
+        .from(voiceAgents)
+        .where(and(
+          eq(voiceAgents.restaurantId, parseInt(restaurantId)),
+          eq(voiceAgents.tenantId, parseInt(tenantId))
+        ))
+        .limit(1);
+
+      if (!voiceAgent || !voiceAgent.elevenlabsAgentId) {
+        return res.status(404).json({ error: 'ElevenLabs voice agent not found' });
+      }
+
+      // Generate default dynamic variables and merge with custom ones
+      const defaultVariables = await elevenLabsService.generateDynamicVariables(parseInt(restaurantId));
+      const dynamicVariables = { ...defaultVariables, ...customDynamicVariables };
+
+      const conversationId = await elevenLabsService.startConversationWithDynamicVariables(
+        voiceAgent.elevenlabsAgentId,
+        dynamicVariables
+      );
+
+      res.json({ 
+        success: true, 
+        conversationId,
+        dynamicVariables,
+        message: 'Conversation started successfully' 
+      });
+
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      res.status(500).json({ error: 'Failed to start conversation' });
+    }
+  }
+);
+
+// GET /api/tenants/:tenantId/restaurants/:restaurantId/availability-tool
+// Real-time availability checking tool for voice agents
+router.get('/tenants/:tenantId/restaurants/:restaurantId/availability-tool',
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const { date, time, guests } = req.query;
+
+      if (!date || !time || !guests) {
+        return res.status(400).json({ 
+          error: 'Missing required parameters: date, time, guests',
+          available: false,
+          message: 'Please provide all booking details'
+        });
+      }
+
+      // Convert to proper date format
+      const requestedDateTime = new Date(`${date}T${time}:00`);
+      const now = new Date();
+
+      // Basic validation
+      if (requestedDateTime < now) {
+        return res.json({
+          available: false,
+          message: 'Requested time is in the past',
+          alternatives: []
+        });
+      }
+
+      // Get restaurant info
+      const [restaurant] = await db
+        .select()
+        .from(restaurants)
+        .where(and(
+          eq(restaurants.id, parseInt(restaurantId as string)),
+          eq(restaurants.tenantId, parseInt(tenantId as string))
+        ))
+        .limit(1);
+
+      if (!restaurant) {
+        return res.status(404).json({ 
+          error: 'Restaurant not found',
+          available: false
+        });
+      }
+
+      // Check if the restaurant is open at requested time
+      // This is a simplified check - in a real system you'd check opening hours
+      const hour = requestedDateTime.getHours();
+      const isOpen = hour >= 11 && hour <= 22; // 11 AM to 10 PM
+
+      if (!isOpen) {
+        return res.json({
+          available: false,
+          message: `We are closed at ${time}. Our hours are 11:00 AM - 10:00 PM`,
+          alternatives: [
+            '12:00 PM',
+            '1:00 PM', 
+            '6:00 PM',
+            '7:00 PM'
+          ]
+        });
+      }
+
+      // Check existing bookings for conflicts
+      const existingBookings = await db
+        .select()
+        .from(bookings)
+        .where(and(
+          eq(bookings.restaurantId, parseInt(restaurantId as string)),
+          eq(bookings.status, 'confirmed')
+        ));
+
+      // Simple availability logic (in real system, check table capacity)
+      const maxBookingsPerHour = 20; // Example capacity
+      const bookingsAtTime = existingBookings.filter(booking => {
+        const bookingTime = new Date(booking.bookingDate);
+        return Math.abs(bookingTime.getTime() - requestedDateTime.getTime()) < 60 * 60 * 1000; // Within 1 hour
+      });
+
+      const totalGuests = bookingsAtTime.reduce((sum, booking) => sum + booking.partySize, 0);
+      const requestedGuests = parseInt(guests as string);
+      
+      const available = (totalGuests + requestedGuests) <= maxBookingsPerHour;
+
+      if (available) {
+        return res.json({
+          available: true,
+          message: `Yes, we have availability for ${guests} guests on ${date} at ${time}`,
+          booking_info: {
+            date: date,
+            time: time,
+            guests: requestedGuests,
+            estimated_duration: '2 hours'
+          }
+        });
+      } else {
+        // Generate alternative times
+        const alternatives = [];
+        for (let i = 1; i <= 3; i++) {
+          const altTime = new Date(requestedDateTime.getTime() + (i * 60 * 60 * 1000));
+          if (altTime.getHours() <= 21) {
+            alternatives.push(altTime.toTimeString().substring(0, 5));
+          }
+        }
+
+        return res.json({
+          available: false,
+          message: `Sorry, we're fully booked at ${time}. Here are some alternative times:`,
+          alternatives: alternatives,
+          current_capacity: `${totalGuests}/${maxBookingsPerHour} guests booked`
+        });
+      }
+
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      res.status(500).json({ 
+        error: 'Failed to check availability',
+        available: false,
+        message: 'Please try again or contact us directly'
+      });
+    }
+  }
+);
+
+// POST /api/tenants/:tenantId/restaurants/:restaurantId/menu-info-tool
+// Menu information tool for voice agents
+router.get('/tenants/:tenantId/restaurants/:restaurantId/menu-info-tool',
+  async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const { category, item, dietary } = req.query;
+
+      // Get restaurant info
+      const [restaurant] = await db
+        .select()
+        .from(restaurants)
+        .where(and(
+          eq(restaurants.id, parseInt(restaurantId as string)),
+          eq(restaurants.tenantId, parseInt(tenantId as string))
+        ))
+        .limit(1);
+
+      if (!restaurant) {
+        return res.status(404).json({ 
+          error: 'Restaurant not found'
+        });
+      }
+
+      // This would typically connect to your menu system
+      // For demo purposes, providing sample menu data
+      const sampleMenu = {
+        appetizers: [
+          { name: 'Bruschetta', price: '$12', description: 'Fresh tomatoes, basil, mozzarella', dietary: ['vegetarian'] },
+          { name: 'Calamari', price: '$16', description: 'Crispy squid with marinara sauce', dietary: [] }
+        ],
+        mains: [
+          { name: 'Grilled Salmon', price: '$28', description: 'Atlantic salmon with seasonal vegetables', dietary: ['gluten-free'] },
+          { name: 'Pasta Primavera', price: '$22', description: 'Fresh vegetables with penne pasta', dietary: ['vegetarian', 'vegan-option'] },
+          { name: 'Ribeye Steak', price: '$36', description: '12oz ribeye with garlic mashed potatoes', dietary: ['gluten-free'] }
+        ],
+        desserts: [
+          { name: 'Tiramisu', price: '$9', description: 'Classic Italian dessert', dietary: ['vegetarian'] },
+          { name: 'Chocolate Cake', price: '$10', description: 'Rich chocolate layer cake', dietary: ['vegetarian'] }
+        ],
+        beverages: [
+          { name: 'House Wine', price: '$8/glass', description: 'Red or white wine selection', dietary: [] },
+          { name: 'Fresh Juice', price: '$6', description: 'Orange, apple, or cranberry', dietary: ['vegan', 'gluten-free'] }
+        ]
+      };
+
+      // Filter based on query parameters
+      let response: any = {
+        restaurant_name: restaurant.name,
+        menu_highlights: []
+      };
+
+      if (category && sampleMenu[category as keyof typeof sampleMenu]) {
+        response.category = category;
+        response.items = sampleMenu[category as keyof typeof sampleMenu];
+      } else if (item) {
+        // Search for specific item across all categories
+        const allItems = Object.values(sampleMenu).flat();
+        const foundItem = allItems.find(menuItem => 
+          menuItem.name.toLowerCase().includes((item as string).toLowerCase())
+        );
+        if (foundItem) {
+          response.item = foundItem;
+        } else {
+          response.message = `Sorry, we don't have ${item} on our menu. Would you like to hear about our specials?`;
+        }
+      } else if (dietary) {
+        // Filter by dietary restrictions
+        const allItems = Object.values(sampleMenu).flat();
+        const filteredItems = allItems.filter(menuItem => 
+          menuItem.dietary.some(diet => 
+            diet.toLowerCase().includes((dietary as string).toLowerCase())
+          )
+        );
+        response.dietary_filter = dietary;
+        response.items = filteredItems;
+      } else {
+        // Return categories and highlights
+        response.categories = Object.keys(sampleMenu);
+        response.menu_highlights = [
+          'Grilled Salmon - Our signature dish',
+          'Pasta Primavera - Popular vegetarian option',
+          'Ribeye Steak - Premium cut',
+          'Fresh daily specials available'
+        ];
+        response.message = 'What type of dish interests you? We have appetizers, mains, desserts, and beverages.';
+      }
+
+      res.json(response);
+
+    } catch (error) {
+      console.error('Error getting menu info:', error);
+      res.status(500).json({ 
+        error: 'Failed to get menu information',
+        message: 'Please ask our staff for menu details'
+      });
+    }
+  }
+);
 
 export { router as elevenLabsRouter };
